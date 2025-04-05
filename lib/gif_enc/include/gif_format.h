@@ -8,7 +8,7 @@
 
 namespace GIFEnc {
 constexpr u8 GIF_COLOR_RES      = 8;  // color resolution
-constexpr u8 GIF_DISPOSE_METHOD = 2;  // dispose method
+constexpr u8 GIF_DISPOSE_METHOD = 3;  // dispose method
 constexpr u8 GIF_END            = 0x3B;
 
 std::vector<u8>

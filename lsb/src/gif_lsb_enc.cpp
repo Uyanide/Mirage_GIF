@@ -162,7 +162,7 @@ fillPalette(std::vector<PixelBGRA>& palette, const u32 lsbLevel, const u32 minCo
                                     0xffu);
         }
     }
-    *(palette.end() - 2)        = genFirstPixel(lsbLevel);
+    *(palette.end() - 2) = genFirstPixel(lsbLevel);
     if (const auto transparentColor = findUnusedColor({palette.data(), palette.size() - 1})) {
         *prev(palette.end()) = *transparentColor;
     } else {
@@ -191,8 +191,8 @@ genPalettes(GetPaletteFunc& getPalette,
             if (res.isValid) {
                 fillPalette(res.palette, lsbLevel, minCodeLength);
             } else {
-                GeneralLogger::error("Error quantifying frame " + std::to_string(&res - quantResultsRef->data()) + ": " +
-                                     res.errorMessage);
+                GeneralLogger::error("Error quantifying frame " + std::to_string(&res - quantResultsRef->data()) +
+                                     ": " + res.errorMessage);
             }
         }
         getPalette = [quantResultsRef](u32 frameIndex) -> const vector<PixelBGRA>* {
@@ -212,8 +212,8 @@ genPalettes(GetPaletteFunc& getPalette,
         combined.reserve(frameCount * 255);
         for (const auto& res : (*quantResultsRef)) {
             if (!res.isValid) {
-                GeneralLogger::error("Error quantifying frame " + std::to_string(&res - quantResultsRef->data()) + ": " +
-                                     res.errorMessage);
+                GeneralLogger::error("Error quantifying frame " + std::to_string(&res - quantResultsRef->data()) +
+                                     ": " + res.errorMessage);
                 continue;
             }
             if (res.palette.size() != 255) {
