@@ -1,0 +1,10 @@
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+AlwaysBreakAfterReturnType: All
+UseTab: Never
+AlignConsecutiveAssignments: true
+BinPackArguments: false
+BinPackParameters: false
+BreakConstructorInitializers: BeforeColon
+BreakStringLiterals: true
