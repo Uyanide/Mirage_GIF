@@ -59,16 +59,21 @@ for ($s = 0; $s -le 4; $s++) {
         foreach ($suffix in @("C", "R")) {
             $mode = "S${s}W${w}${suffix}"
             $returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
-                "$currentDirectory\..\images\气气.gif",
-                "$currentDirectory\..\images\马达.gif",
+                # "$currentDirectory\..\images\气气.gif",
+                # "$currentDirectory\..\images\马达.gif",
+                "C:\Users\cyani\OneDrive\桌面\25f11f527c4feb6a8102ec40400c5683884e7e84.gif",
+                "C:\Users\cyani\OneDrive\桌面\7faaa4547bd5ff5dcbaba7127f4324b26105c26b.gif",
+                "-x", "800",
+                "-y", "540",
+                "-f", "60",
+                "-d", "40",
                 "-o",
-                "$currentDirectory\mirage\$mode",
+                "$currentDirectory\mirage\${mode}-mashiro",
                 "-m", "$mode",
                 "-p", "12"
             )
 
             if ($returnCode -ne 0) {
-                Write-Host "处理模式 $mode 时出错，退出代码: $returnCode"
                 exit $returnCode
             }
         }

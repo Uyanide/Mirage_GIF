@@ -26,6 +26,7 @@ gifFrameHeader(u32 width,
                u32 delay,
                bool hasTransparency,
                u32 transparentIndex,
+               u32 disposalMethod,
                u32 minCodeLength,
                const std::vector<PixelBGRA> &palette = {}) noexcept;
 

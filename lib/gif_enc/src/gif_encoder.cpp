@@ -84,10 +84,8 @@ GIFEnc::GIFEncoder::~GIFEncoder() {
 }
 
 void
-GIFEnc::GIFEncoder::addFrame(const span<u8>& frame,
-                             u32 delay,
-                             u32 minCodeLength,
-                             const std::vector<PixelBGRA>& palette) {
+GIFEnc::GIFEncoder::addFrame(
+    const span<u8>& frame, u32 delay, u32 disposalMethod, u32 minCodeLength, const std::vector<PixelBGRA>& palette) {
     if (m_finished) {
         return;
     }
@@ -116,8 +114,14 @@ GIFEnc::GIFEncoder::addFrame(const span<u8>& frame,
         }
     }
 
-    auto buffer = GIFEnc::gifFrameHeader(
-        m_width, m_height, delay, m_hasTransparency, m_transparentIndex, mcl, pal ? *pal : vector<PixelBGRA>{});
+    auto buffer = GIFEnc::gifFrameHeader(m_width,
+                                         m_height,
+                                         delay,
+                                         m_hasTransparency,
+                                         m_transparentIndex,
+                                         disposalMethod,
+                                         mcl,
+                                         pal ? *pal : vector<PixelBGRA>{});
 
     if (buffer.empty()) {
         throw GIFEnc::GIFEncodeException("Frame header generation failed");
@@ -150,10 +154,8 @@ GIFEnc::GIFEncoder::addFrame(const span<u8>& frame,
 }
 
 void
-GIFEnc::GIFEncoder::addFrameCompressed(const span<u8>& frame,
-                                       u32 delay,
-                                       u32 minCodeLength,
-                                       const std::vector<PixelBGRA>& palette) {
+GIFEnc::GIFEncoder::addFrameCompressed(
+    const span<u8>& frame, u32 delay, u32 disposalMethod, u32 minCodeLength, const std::vector<PixelBGRA>& palette) {
     if (m_finished) {
         return;
     }
@@ -182,8 +184,14 @@ GIFEnc::GIFEncoder::addFrameCompressed(const span<u8>& frame,
         }
     }
 
-    auto buffer = GIFEnc::gifFrameHeader(
-        m_width, m_height, delay, m_hasTransparency, m_transparentIndex, mcl, pal ? *pal : vector<PixelBGRA>{});
+    auto buffer = GIFEnc::gifFrameHeader(m_width,
+                                         m_height,
+                                         delay,
+                                         m_hasTransparency,
+                                         m_transparentIndex,
+                                         disposalMethod,
+                                         mcl,
+                                         pal ? *pal : vector<PixelBGRA>{});
     if (buffer.empty()) {
         throw GIFEnc::GIFEncodeException("Frame header generation failed");
     }

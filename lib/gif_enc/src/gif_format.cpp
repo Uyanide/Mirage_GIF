@@ -83,6 +83,7 @@ GIFEnc::gifFrameHeader(u32 width,
                        u32 delay,
                        bool hasTransparency,
                        u32 transparentIndex,
+                       u32 disposalMethod,
                        u32 minCodeLength,
                        const std::vector<PixelBGRA>& palette) noexcept {
     if (minCodeLength < 2 || minCodeLength > 8) {
@@ -96,12 +97,15 @@ GIFEnc::gifFrameHeader(u32 width,
             return {};
         }
     }
+    if (disposalMethod > 3) {
+        return {};
+    }
     delay /= 10;
     vector<u8> ret{
         0x21,
         0xF9,
         0x04,  // Graphic Control Extension
-        TOU8(hasTransparency ? 0x01u | (GIF_DISPOSE_METHOD << 2) : 0x00u),
+        TOU8(hasTransparency ? 0x01u | (disposalMethod << 2) : 0x00u),
         TOU8(delay & 0xFFu),
         TOU8(delay >> 8),
         TOU8(hasTransparency ? transparentIndex : 0x00u),

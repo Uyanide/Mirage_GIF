@@ -35,7 +35,11 @@ class GIFEncoder {
      *                      If empty, the global color table will be used.
      */
     void
-    addFrame(const std::span<u8>& frame, u32 delay, u32 minCodeLength = 0, const std::vector<PixelBGRA>& palette = {});
+    addFrame(const std::span<u8>& frame,
+             u32 delay,
+             u32 disposalMethod,
+             u32 minCodeLength                     = 0,
+             const std::vector<PixelBGRA>& palette = {});
 
     /**
      * @brief Add a frame to the GIF file.
@@ -48,6 +52,7 @@ class GIFEncoder {
     void
     addFrameCompressed(const std::span<u8>& frame,
                        u32 delay,
+                       u32 disposalMethod,
                        u32 minCodeLength                     = 0,
                        const std::vector<PixelBGRA>& palette = {});
 

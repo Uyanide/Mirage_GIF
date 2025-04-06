@@ -39,15 +39,17 @@ class Options {
         static constexpr std::string mergeMode  = "S2W1C";
         static constexpr const char* outputFile = "output.gif";
         static constexpr u32 threadCount        = 0;  // 0 means auto-detect
+        static constexpr u32 disposalMethod     = 3;
     };
 
     struct Limits {
-        static constexpr u32 width      = 4096;
-        static constexpr u32 height     = 4096;
-        static constexpr u32 frameCount = 1000;
-        static constexpr u32 delay      = 65535;  // max of u16
-        static constexpr u32 modeSlope  = 4;
-        static constexpr u32 modeWidth  = 4;
+        static constexpr u32 width          = 4096;
+        static constexpr u32 height         = 4096;
+        static constexpr u32 frameCount     = 1000;
+        static constexpr u32 delay          = 65535;  // max of u16
+        static constexpr u32 modeSlope      = 4;
+        static constexpr u32 modeWidth      = 4;
+        static constexpr u32 disposalMethod = 3;
     };
 
     std::string innerFile;
@@ -58,7 +60,8 @@ class Options {
     u32 frameCount         = Defaults::frameCount;
     u32 delay              = Defaults::delay;
     MergeMode mergeMode;
-    u32 threadCount = Defaults::threadCount;
+    u32 threadCount    = Defaults::threadCount;
+    u32 disposalMethod = Defaults::disposalMethod;
 
    public:
     static std::optional<Options>

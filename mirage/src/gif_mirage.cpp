@@ -245,7 +245,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
 
         for (u32 i = 0; i < args.frameCount; ++i) {
             if (outFrames[i].empty()) continue;
-            encoder->addFrameCompressed(outFrames[i], args.delay);
+            encoder->addFrameCompressed(outFrames[i], args.delay, args.disposalMethod);
         }
         if (!encoder->finish()) {
             GeneralLogger::error("Failed to write GIF file.");

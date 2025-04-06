@@ -38,36 +38,33 @@ Options::parseArgs(int argc, char** argv) noexcept {
         //
         ("cover", "Cover image file", cxxopts::value<string>())
         //
-        ("o,output",
-         "Output GIF file. Default: " + string(Defaults::outputFile),
-         cxxopts::value<string>()->default_value(Defaults::outputFile))
+        ("o,output", "Output GIF file.", cxxopts::value<string>()->default_value(Defaults::outputFile))
         //
         ("x,width",
-         "Width of the generated GIF. Default: " + std::to_string(Defaults::width) +
-             ". Max: " + std::to_string(Limits::width),
+         "Width of the generated GIF. Max: " + std::to_string(Limits::width),
          cxxopts::value<u32>()->default_value(std::to_string(Defaults::width)))
         //
         ("y,height",
-         "Height of the generated GIF. Default: " + std::to_string(Defaults::height) +
-             ". Max: " + std::to_string(Limits::height),
+         "Height of the generated GIF. Max: " + std::to_string(Limits::height),
          cxxopts::value<u32>()->default_value(std::to_string(Defaults::height)))
         //
         ("f,frames",
-         "Number of frames in the generated GIF. Default: " + std::to_string(Defaults::frameCount) +
-             ". Max: " + std::to_string(Limits::frameCount),
+         "Number of frames in the generated GIF. Max: " + std::to_string(Limits::frameCount),
          cxxopts::value<u32>()->default_value(std::to_string(Defaults::frameCount)))
         //
         ("d,duration",
-         "Frame duration between frames in milliseconds in the generated GIF. Default: " +
-             std::to_string(Defaults::delay) + ". Max: " + std::to_string(Limits::delay),
+         "Frame duration between frames in milliseconds in the generated GIF. Max: " + std::to_string(Limits::delay),
          cxxopts::value<u32>()->default_value(std::to_string(Defaults::delay)))
         //
-        ("m,mode", mergeModeHint, cxxopts::value<string>()->default_value(Defaults::mergeMode))
+        ("s,disposal",
+         "Disposal method for the generated GIF. 0 = Not specified, 1 = No disposal, 2 = Background, 3 = Previous.",
+         cxxopts::value<u32>()->default_value(std::to_string(Defaults::disposalMethod)))
         //
         ("p,threads",
-         "Number of threads to use for processing, 0 means auto-detect. Default: " +
-             std::to_string(Defaults::threadCount),
+         "Number of threads to use for processing, 0 = auto-detect.",
          cxxopts::value<u32>()->default_value(std::to_string(Defaults::threadCount)))
+        //
+        ("m,mode", mergeModeHint, cxxopts::value<string>()->default_value(Defaults::mergeMode))
         //
         ("h,help", "Show help message");
 
@@ -93,15 +90,16 @@ Options::parseArgs(int argc, char** argv) noexcept {
         const auto& mode = *modeRef;
 
         Options gifOptions;
-        gifOptions.innerFile   = result["inner"].as<string>();
-        gifOptions.coverFile   = result["cover"].as<string>();
-        gifOptions.outputFile  = result["output"].as<string>();
-        gifOptions.width       = result["width"].as<u32>();
-        gifOptions.height      = result["height"].as<u32>();
-        gifOptions.frameCount  = result["frames"].as<u32>();
-        gifOptions.delay       = result["duration"].as<u32>();
-        gifOptions.mergeMode   = mode;
-        gifOptions.threadCount = result["threads"].as<u32>();
+        gifOptions.innerFile      = result["inner"].as<string>();
+        gifOptions.coverFile      = result["cover"].as<string>();
+        gifOptions.outputFile     = result["output"].as<string>();
+        gifOptions.width          = result["width"].as<u32>();
+        gifOptions.height         = result["height"].as<u32>();
+        gifOptions.frameCount     = result["frames"].as<u32>();
+        gifOptions.delay          = result["duration"].as<u32>();
+        gifOptions.mergeMode      = mode;
+        gifOptions.threadCount    = result["threads"].as<u32>();
+        gifOptions.disposalMethod = result["disposal"].as<u32>();
 
         if (gifOptions.threadCount == 0) {
             gifOptions.threadCount = getThreadCount();
@@ -157,6 +155,10 @@ Options::checkValid() const {
     }
     if (delay > Limits::delay) {
         throw OptionInvalidException("Delay must be less than " + std::to_string(Limits::delay) + ".");
+    }
+    if (disposalMethod > Limits::disposalMethod) {
+        throw OptionInvalidException("Disposal method must be less than " + std::to_string(Limits::disposalMethod) +
+                                     ".");
     }
 }
 

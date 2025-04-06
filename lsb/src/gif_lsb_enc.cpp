@@ -518,6 +518,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
                 }
                 encoder.addFrame({frameResultBuffer.data(), frameResultBuffer.size()},
                                  delays[frameIndex],
+                                 args.transparency ? 3 : 1,
                                  minCodeLength,
                                  args.enableLocalPalette ? *palette : vector<PixelBGRA>{});
             }
