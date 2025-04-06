@@ -4,6 +4,7 @@
 #include "cxxopts.hpp"
 #include "log.h"
 #include "options.h"
+#include "path.h"
 
 using std::string;
 
@@ -27,8 +28,12 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
         //
         ("image", "Image to decrypt", cxxopts::value<string>())
         //
-        ("o,output",
-         "Output file. If not given, the output file will be saved as filename decrypted from the image.",
+        ("o,name",
+         "Output filename. If not given, the output file will be saved as filename decrypted from the image.",
+         cxxopts::value<string>())
+        //
+        ("d,directory",
+         "Output directory. If not given, the output file will be saved in the current directory.",
          cxxopts::value<string>())
         //
         ("h,help", "Show help message");
@@ -48,8 +53,15 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
         }
 
         DecodeOptions gifOptions;
-        gifOptions.decyptImage = result["image"].as<string>();
-        gifOptions.outputFile  = result.count("output") ? result["output"].as<string>() : "";
+        gifOptions.decyptImage     = result["image"].as<string>();
+        gifOptions.outputFile      = result.count("name") ? result["name"].as<string>() : "";
+        gifOptions.outputDirectory = result.count("directory") ? result["directory"].as<string>() : ".";
+        if (!isValidFileName(gifOptions.outputFile)) {
+            throw OptionInvalidException("Invalid output filename: " + gifOptions.outputFile);
+        }
+        if (gifOptions.outputDirectory.back() != '/' && gifOptions.outputDirectory.back() != '\\') {
+            gifOptions.outputDirectory.push_back('/');
+        }
 
         return gifOptions;
     } catch (const cxxopts::exceptions::parsing& e) {

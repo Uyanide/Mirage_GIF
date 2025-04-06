@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "def.h"
+#include "path.h"
 
 namespace GIFEnc {
 class GIFEncoder {
@@ -75,7 +76,7 @@ class GIFEncoder {
 
     inline std::string
     getFileName() const {
-        return m_outPath.string();
+        return deLocalizePath(m_outPath);
     }
 
    private:

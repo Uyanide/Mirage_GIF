@@ -12,6 +12,7 @@ class DecodeOptions {
    public:
     std::string decyptImage;
     std::string outputFile;
+    std::string outputDirectory;  // ends with '/'
 
    public:
     static std::optional<DecodeOptions>

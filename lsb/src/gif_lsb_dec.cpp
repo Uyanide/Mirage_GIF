@@ -8,6 +8,7 @@
 #include "gif_lsb.h"
 #include "imsq.h"
 #include "log.h"
+#include "path.h"
 
 using namespace GIFImage;
 using namespace GIFLsb;
@@ -37,15 +38,6 @@ class DecodingException final : public std::exception {
    private:
     string msg;
 };
-
-static string
-getExtName(const string& filePath) {
-    auto pos = filePath.find_last_of('.');
-    if (pos == string::npos || pos == filePath.length() - 1) {
-        return ".dat";
-    }
-    return filePath.substr(pos);
-}
 
 static u32
 getLsbLevel(const PixelBGRA& pixel) {
@@ -164,10 +156,13 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
         std::ofstream outFile;
         std::filesystem::path outputPath;
         if (!headerData.fileName.empty() && args.outputFile.empty()) {
-            outputPath = std::filesystem::path(localizePath(headerData.fileName));
+            outputPath = std::filesystem::path(localizePath(args.outputDirectory + headerData.fileName));
+        } else if (!args.outputFile.empty()) {
+            outputPath = std::filesystem::path(localizePath(args.outputDirectory + args.outputFile))
+                             .replace_extension(getExtName(headerData.fileName));
         } else {
-            outputPath =
-                std::filesystem::path(localizePath(args.outputFile)).replace_extension(getExtName(headerData.fileName));
+            outputPath = std::filesystem::path(
+                localizePath(args.outputDirectory + "decrypted" + getExtName(headerData.fileName)));
         }
         outFile.open(outputPath, std::ios::binary);
         if (!outFile.is_open()) {
@@ -204,7 +199,7 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
             GeneralLogger::info("Progress: 100.00%", GeneralLogger::DETAIL);
         }
         GeneralLogger::info("Decoding completed successfully.");
-        GeneralLogger::info("Output file: " + outputPath.string());
+        GeneralLogger::info("Output file: " + deLocalizePath(outputPath.string()));
         return true;
     } catch (const EOFException&) {
         GeneralLogger::error("End of file reached before decoding completed.");

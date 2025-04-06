@@ -31,26 +31,6 @@ typedef uint32_t u32;
 
 #else  // __cplusplus
 
-#include <string>
-
-#ifdef _WIN32
-
-#include <windows.h>
-
-static inline std::wstring
-localizePath(const std::string& str) {
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), nullptr, 0);
-    std::wstring wstr(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstr[0], size_needed);
-    return wstr;
-}
-
-#else  // _WIN32
-
-static std::string inline localizePath(const std::string& str) { return str; }
-
-#endif  // _WIN32
-
 #define EXTERN_C extern "C"
 
 #ifndef GIF_TYPES_DEFINED

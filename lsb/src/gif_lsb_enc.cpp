@@ -14,6 +14,7 @@
 #include "gif_lsb.h"
 #include "imsq.h"
 #include "log.h"
+#include "path.h"
 #include "quantizer.h"
 
 using std::string, std::vector, std::span;
@@ -22,8 +23,8 @@ using namespace GIFLsb;
 using namespace GIFEnc;
 
 static constexpr size_t READ_CHUNK_SIZE = 1 << 20;  // 1 MiB, should be enough to fit header
-static const string ENCODED_FILE_NAME   = "mtk";
-static constexpr double PROGRESS_STEP   = 0.0314;  // 3.14%
+// static const string ENCODED_FILE_NAME   = "mtk";
+static constexpr double PROGRESS_STEP = 0.0314;  // 3.14%
 
 // (1 << (3 * lsbLevel)) * numColors + 2 < 1 << minCodeLength
 //                                     ^ these 2: header pixel & transparent color (if any)
@@ -277,6 +278,7 @@ class FileReaderException final : public std::exception {
 class FileReader {
    public:
     FileReader(const string& filePath, const u32 lsbLevel) : m_bitsPerPixel(lsbLevel * 3), m_buffer(READ_CHUNK_SIZE) {
+        m_fileName = getFileName(filePath);
         m_filePath = std::filesystem::path(localizePath(filePath));
         if (!std::filesystem::exists(m_filePath)) {
             throw FileReaderException("Input file does not exist: " + filePath);
@@ -358,17 +360,19 @@ class FileReader {
         const string fileSize = std::to_string(m_fileSize);
         header.insert(header.end(), fileSize.begin(), fileSize.end());
         header.push_back(1);
-        const string extName = getExtName(m_filePath.string());
-        header.insert(header.end(), ENCODED_FILE_NAME.begin(), ENCODED_FILE_NAME.end());
-        header.push_back('.');
-        header.insert(header.end(), extName.begin(), extName.end());
+        // const string extName = getExtName(m_filePath.string());
+        // header.insert(header.end(), ENCODED_FILE_NAME.begin(), ENCODED_FILE_NAME.end());
+        // header.push_back('.');
+        // header.insert(header.end(), extName.begin(), extName.end());
+        header.insert(header.end(), m_fileName.begin(), m_fileName.end());
         header.push_back(1);
         if (header.size() >= READ_CHUNK_SIZE) {
             header.resize(READ_CHUNK_SIZE);
             *(header.end() - 2) = 1;
             *(header.end() - 1) = 0;
         }
-        const auto mimeP = MimeTypes::getType(extName.c_str());
+        // const auto mimeP = MimeTypes::getType(extName.c_str());
+        const auto mimeP = MimeTypes::getType(getExtName(m_filePath.string()).c_str());
         string mimeType  = mimeP ? string(mimeP) : "application/octet-stream";
         header.insert(header.end(), mimeType.begin(), mimeType.end());
         header.push_back(0);
@@ -381,6 +385,9 @@ class FileReader {
         m_headerSize = header.size();
         m_bufferPos  = 0;
         m_isHeader   = true;
+
+        GeneralLogger::info("File name: " + m_fileName, GeneralLogger::STEP);
+        GeneralLogger::info("Mime type: " + mimeType, GeneralLogger::STEP);
     }
 
     inline bool
@@ -399,18 +406,10 @@ class FileReader {
         return m_bufferSize > 0;
     }
 
-    [[nodiscard]] static inline string
-    getExtName(const string& filePath) {
-        auto pos = filePath.find_last_of('.');
-        if (pos == string::npos || pos == filePath.length() - 1) {
-            return "";
-        }
-        return filePath.substr(pos + 1);
-    }
-
     u32 m_bitsPerPixel = 0;
 
     std::filesystem::path m_filePath;
+    string m_fileName;
     std::ifstream m_file;
     size_t m_fileSize   = 0;
     size_t m_headerSize = 0;

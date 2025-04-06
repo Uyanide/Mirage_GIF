@@ -16,6 +16,7 @@
 
 #include "imsq.h"
 #include "log.h"
+#include "path.h"
 
 using std::string, std::vector, std::wstring;
 

@@ -35,7 +35,9 @@ if ($returnCode -ne 0) {
 $returnCode = Execute-Program -ProgramName $decPath -ArgsList @(
     "$PSScriptRoot\lsb\gif.gif",
     "-o",
-    "$PSScriptRoot\lsb\gif-dec.gif"
+    "gif-dec.gif",
+    "-d",
+    "$PSScriptRoot\lsb\"
 )
 
 if ($returnCode -ne 0) {
@@ -67,7 +69,9 @@ if ($returnCode -ne 0) {
 $returnCode = Execute-Program -ProgramName $decPath -ArgsList @(
     "$PSScriptRoot\lsb\webp.gif",
     "-o",
-    "$PSScriptRoot\lsb\webp-dec.gif"
+    "webp-dec.gif",
+    "-d",
+    "$PSScriptRoot\lsb\"
 )
 
 if ($returnCode -ne 0) {
@@ -98,7 +102,9 @@ if ($returnCode -ne 0) {
 $returnCode = Execute-Program -ProgramName $decPath -ArgsList @(
     "$PSScriptRoot\lsb\png.gif",
     "-o",
-    "$PSScriptRoot\lsb\png-dec.jpg"
+    "png-dec.jpg",
+    "-d",
+    "$PSScriptRoot\lsb\"
 )
 
 if ($returnCode -ne 0) {

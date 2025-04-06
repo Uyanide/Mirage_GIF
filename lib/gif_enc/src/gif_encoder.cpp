@@ -8,6 +8,7 @@
 #include "gif_exception.h"
 #include "gif_format.h"
 #include "gif_lzw.h"
+#include "path.h"
 using std::vector, std::span, std::string;
 
 static inline bool
