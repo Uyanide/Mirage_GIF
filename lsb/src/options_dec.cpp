@@ -56,7 +56,7 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
         gifOptions.decyptImage     = result["image"].as<string>();
         gifOptions.outputFile      = result.count("name") ? result["name"].as<string>() : "";
         gifOptions.outputDirectory = result.count("directory") ? result["directory"].as<string>() : ".";
-        if (!isValidFileName(gifOptions.outputFile)) {
+        if (!gifOptions.outputFile.empty() && !isValidFileName(gifOptions.outputFile)) {
             throw OptionInvalidException("Invalid output filename: " + gifOptions.outputFile);
         }
         if (gifOptions.outputDirectory.back() != '/' && gifOptions.outputDirectory.back() != '\\') {
