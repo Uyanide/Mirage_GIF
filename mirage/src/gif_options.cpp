@@ -62,9 +62,7 @@ Options::parseArgs(int argc, char** argv) noexcept {
              std::to_string(Defaults::delay) + ". Max: " + std::to_string(Limits::delay),
          cxxopts::value<u32>()->default_value(std::to_string(Defaults::delay)))
         //
-        ("m,mode",
-         mergeModeHint,
-         cxxopts::value<u32>()->default_value(std::to_string(static_cast<u32>(Defaults::mergeMode))))
+        ("m,mode", mergeModeHint, cxxopts::value<string>()->default_value(Defaults::mergeMode))
         //
         ("p,threads",
          "Number of threads to use for processing, 0 means auto-detect. Default: " +
@@ -88,6 +86,12 @@ Options::parseArgs(int argc, char** argv) noexcept {
             throw OptionInvalidException("'inner' and 'cover' arguments are required.");
         }
 
+        const auto modeRef = GIFMirage::MergeMode::parse(result["mode"].as<string>());
+        if (!modeRef) {
+            throw OptionInvalidException("Invalid merge mode: " + result["mode"].as<string>());
+        }
+        const auto& mode = *modeRef;
+
         Options gifOptions;
         gifOptions.innerFile   = result["inner"].as<string>();
         gifOptions.coverFile   = result["cover"].as<string>();
@@ -96,7 +100,7 @@ Options::parseArgs(int argc, char** argv) noexcept {
         gifOptions.height      = result["height"].as<u32>();
         gifOptions.frameCount  = result["frames"].as<u32>();
         gifOptions.delay       = result["duration"].as<u32>();
-        gifOptions.mergeMode   = result["mode"].as<u32>();
+        gifOptions.mergeMode   = mode;
         gifOptions.threadCount = result["threads"].as<u32>();
 
         if (gifOptions.threadCount == 0) {
@@ -154,7 +158,28 @@ Options::checkValid() const {
     if (delay > Limits::delay) {
         throw OptionInvalidException("Delay must be less than " + std::to_string(Limits::delay) + ".");
     }
-    if (mergeMode >= static_cast<u32>(MergeMode::PIVOT)) {
-        throw OptionInvalidException("Invalid merge mode: " + std::to_string(mergeMode));
+}
+
+std::optional<MergeMode>
+MergeMode::parse(const std::string& str) noexcept {
+    MergeMode mode;
+    if (str.size() < 5 || str[0] != 'S' || str[2] != 'W') {
+        return std::nullopt;
     }
+
+    try {
+        mode.slope = std::stoi(str.substr(1, 1));
+        mode.width = std::stoi(str.substr(3, 1));
+        mode.isRow = (str[4] == 'R');
+
+    } catch (...) {
+        return std::nullopt;
+    }
+
+    if (mode.slope > GIFMirage::Options::Limits::modeSlope || mode.width > GIFMirage::Options::Limits::modeWidth ||
+        mode.width == 0) {
+        return std::nullopt;
+    }
+
+    return mode;
 }

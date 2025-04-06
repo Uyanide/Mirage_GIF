@@ -8,25 +8,35 @@
 
 namespace GIFMirage {
 
-enum class MergeMode : u32 {
-    DIAG_2 = 0,
-    ROW_1,
-    COLUMN_1,
-    BASE3_2,
-    CHESSBOARD,
-    PIVOT,  // not used
+struct MergeMode {
+    u32 slope  = 0;     // 0-4
+    u32 width  = 0;     // 0-4
+    bool isRow = true;  // true: row, false: column
 
+    static std::optional<MergeMode>
+    parse(const std::string& str) noexcept;
+
+    std::string
+    toString() const noexcept {
+        return "S" + std::to_string(slope) + "W" + std::to_string(width) + (isRow ? "R" : "C");
+    }
 };
 
 class Options {
-    static constexpr auto mergeModeHint = "Merge mode (0: DIAG_2, 1: ROW_1, 2: COLUMN_1, 3: BASE3_2, 4: CHESSBOARD)";
+    static constexpr auto mergeModeHint =
+        "Merge mode (^S(\\d+)W(\\d+)([CR])$):\n"
+        "  S: Slope, [0, 4]\n"
+        "  W: Width, [1, 4]\n"
+        "  C/R: Direction, Column/Row\n"
+        "  (e.g. S2W1R = Slope 1, Width 2, Row)";
 
+   public:
     struct Defaults {
         static constexpr u32 width              = 640;
         static constexpr u32 height             = 640;
         static constexpr u32 frameCount         = 30;
         static constexpr u32 delay              = 80;
-        static constexpr u32 mergeMode          = 0;
+        static constexpr std::string mergeMode  = "S2W1C";
         static constexpr const char* outputFile = "output.gif";
         static constexpr u32 threadCount        = 0;  // 0 means auto-detect
     };
@@ -36,9 +46,10 @@ class Options {
         static constexpr u32 height     = 4096;
         static constexpr u32 frameCount = 1000;
         static constexpr u32 delay      = 65535;  // max of u16
+        static constexpr u32 modeSlope  = 4;
+        static constexpr u32 modeWidth  = 4;
     };
 
-   public:
     std::string innerFile;
     std::string coverFile;
     std::string outputFile = Defaults::outputFile;
@@ -46,8 +57,8 @@ class Options {
     u32 height             = Defaults::height;
     u32 frameCount         = Defaults::frameCount;
     u32 delay              = Defaults::delay;
-    u32 mergeMode          = 0;
-    u32 threadCount        = Defaults::threadCount;
+    MergeMode mergeMode;
+    u32 threadCount = Defaults::threadCount;
 
    public:
     static std::optional<Options>

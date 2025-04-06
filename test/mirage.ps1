@@ -41,63 +41,36 @@ if ($returnCode -ne 0) {
     exit $returnCode
 }
 
-$returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
-    "$currentDirectory\..\images\气气.gif",
-    "$currentDirectory\..\images\马达.gif",
-    "-o",
-    "$currentDirectory\mirage\m0",
-    "-m", "0",
-    "-p", "12"
-)
+# $returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
+#     "$currentDirectory\..\images\气气.gif",
+#     "$currentDirectory\..\images\马达.gif",
+#     "-o",
+#     "$currentDirectory\mirage\m0",
+#     "-m", "0",
+#     "-p", "12"
+# )
 
-if ($returnCode -ne 0) {
-    exit $returnCode
+# if ($returnCode -ne 0) {
+#     exit $returnCode
+# }
+
+for ($s = 0; $s -le 4; $s++) {
+    for ($w = 1; $w -le 4; $w++) {
+        foreach ($suffix in @("C", "R")) {
+            $mode = "S${s}W${w}${suffix}"
+            $returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
+                "$currentDirectory\..\images\气气.gif",
+                "$currentDirectory\..\images\马达.gif",
+                "-o",
+                "$currentDirectory\mirage\$mode",
+                "-m", "$mode",
+                "-p", "12"
+            )
+
+            if ($returnCode -ne 0) {
+                Write-Host "处理模式 $mode 时出错，退出代码: $returnCode"
+                exit $returnCode
+            }
+        }
+    }
 }
-
-$returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
-    "$currentDirectory\..\images\气气.gif",
-    "$currentDirectory\..\images\马达.gif",
-    "-o",
-    "$currentDirectory\mirage\m1",
-    "-m", "1",
-    "-p", "12"
-)
-
-if ($returnCode -ne 0) {
-    exit $returnCode
-}
-
-$returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
-    "$currentDirectory\..\images\气气.gif",
-    "$currentDirectory\..\images\马达.gif",
-    "-o",
-    "$currentDirectory\mirage\m2",
-    "-m", "2",
-    "-p", "12"
-)
-
-if ($returnCode -ne 0) {
-    exit $returnCode
-}
-
-$returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
-    "$currentDirectory\..\images\气气.gif",
-    "$currentDirectory\..\images\马达.gif",
-    "-o",
-    "$currentDirectory\mirage\m3",
-    "-m", "3",
-    "-p", "12"
-)
-
-if ($returnCode -ne 0) {
-    exit $returnCode
-}
-
-$returnCode = Execute-Program -ProgramName $exePath -ArgsList @(
-    "$currentDirectory\..\images\气气.gif",
-    "$currentDirectory\..\images\马达.gif",
-    "-o",
-    "$currentDirectory\mirage\m4",
-    "-m", "4",
-    "-p", "12"
-)

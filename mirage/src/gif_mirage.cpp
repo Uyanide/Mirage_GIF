@@ -4,31 +4,26 @@
 #include <cmath>
 #include <functional>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include "def.h"
+#include "dither.h"
 #include "gif_encoder.h"
 #include "gif_lzw.h"
 #include "gif_options.h"
 #include "imsq.h"
 #include "log.h"
 
-using std::vector;
+using std::vector, std::string, std::array;
 
-using IsCoverFunc      = std::function<bool(u32 x, u32 y)>;
-using IsCoverFuncsType = std::array<IsCoverFunc, size_t(GIFMirage::MergeMode::PIVOT)>;
-static const IsCoverFuncsType IsCoverFuncs{
-    [](u32 x, u32 y) { return ((y + x) & 3) < 2; },
-    [](u32 x, u32 _) { return (x & 1) == 0; },
-    [](u32 _, u32 y) { return (y & 1) == 0; },
-    [](u32 x, u32 y) { return ((y / 3 + x) % 3) < 2; },
-    [](u32 x, u32 y) { return ((y + x) & 1) == 0; },
-};
+using IsCoverFunc = std::function<bool(u32 x, u32 y)>;
 
-static const std::vector<PixelBGRA> GCT{makeBGRA(0, 0, 0), makeBGRA(0x80, 0x80, 0x80), makeBGRA(0xff, 0xff, 0xff)};
+static const vector<PixelBGRA> GCT{makeBGRA(0, 0, 0), makeBGRA(0x80, 0x80, 0x80), makeBGRA(0xff, 0xff, 0xff)};
 static constexpr u32 TRANSPARENT_INDEX = 1;
 static constexpr u32 MIN_CODE_LENGTH   = 2;
+static const auto ditherFunc           = ImageSequence::Dither::BayerOrderedDithering<4>::orderedDithering;
 
 static inline constexpr u32
 u32min(const u32 a, const u32 b) {
@@ -68,100 +63,6 @@ getFrameIndices(const u32* delays, const u32 numFrames, const u32 targetDelay, c
     return ret;
 }
 
-static constexpr double s_bayerMatrix[4][4] = {{0 / 16. * 255, 8 / 16. * 255, 2 / 16. * 255, 10 / 16. * 255},
-                                               {12 / 16. * 255, 4 / 16. * 255, 14 / 16. * 255, 6 / 16. * 255},
-                                               {3 / 16. * 255, 11 / 16. * 255, 1 / 16. * 255, 9 / 16. * 255},
-                                               {15 / 16. * 255, 7 / 16. * 255, 13 / 16. * 255, 5 / 16. * 255}};
-
-static void
-orderedDithering(u8* out, const PixelBGRA* data, const u32 width, const u32 height) noexcept {
-    const auto argb = data;
-    for (u32 y = 0, idx = 0; y < height; y++) {
-        for (u32 x = 0; x < width; x++, idx++) {
-            const auto v = *(argb + idx);
-            const auto l = toGray(v).r;
-            out[idx]     = l > s_bayerMatrix[x & 3][y & 3] ? 255 : 0;
-        }
-    }
-}
-
-// static constexpr double s_bayerMatrix[8][8] = {{0 / 64. * 255,
-//                                                 32 / 64. * 255,
-//                                                 8 / 64. * 255,
-//                                                 40 / 64. * 255,
-//                                                 2 / 64. * 255,
-//                                                 34 / 64. * 255,
-//                                                 10 / 64. * 255,
-//                                                 42 / 64. * 255},
-//                                                {48 / 64. * 255,
-//                                                 16 / 64. * 255,
-//                                                 56 / 64. * 255,
-//                                                 24 / 64. * 255,
-//                                                 50 / 64. * 255,
-//                                                 18 / 64. * 255,
-//                                                 58 / 64. * 255,
-//                                                 26 / 64. * 255},
-//                                                {12 / 64. * 255,
-//                                                 44 / 64. * 255,
-//                                                 4 / 64. * 255,
-//                                                 36 / 64. * 255,
-//                                                 14 / 64. * 255,
-//                                                 46 / 64. * 255,
-//                                                 6 / 64. * 255,
-//                                                 38 / 64. * 255},
-//                                                {60 / 64. * 255,
-//                                                 28 / 64. * 255,
-//                                                 52 / 64. * 255,
-//                                                 20 / 64. * 255,
-//                                                 62 / 64. * 255,
-//                                                 30 / 64. * 255,
-//                                                 54 / 64. * 255,
-//                                                 22 / 64. * 255},
-//                                                {3 / 64. * 255,
-//                                                 35 / 64. * 255,
-//                                                 11 / 64. * 255,
-//                                                 43 / 64. * 255,
-//                                                 1 / 64. * 255,
-//                                                 33 / 64. * 255,
-//                                                 9 / 64. * 255,
-//                                                 41 / 64. * 255},
-//                                                {51 / 64. * 255,
-//                                                 19 / 64. * 255,
-//                                                 59 / 64. * 255,
-//                                                 27 / 64. * 255,
-//                                                 49 / 64. * 255,
-//                                                 17 / 64. * 255,
-//                                                 57 / 64. * 255,
-//                                                 25 / 64. * 255},
-//                                                {15 / 64. * 255,
-//                                                 47 / 64. * 255,
-//                                                 7 / 64. * 255,
-//                                                 39 / 64. * 255,
-//                                                 13 / 64. * 255,
-//                                                 45 / 64. * 255,
-//                                                 5 / 64. * 255,
-//                                                 37 / 64. * 255},
-//                                                {63 / 64. * 255,
-//                                                 31 / 64. * 255,
-//                                                 55 / 64. * 255,
-//                                                 23 / 64. * 255,
-//                                                 61 / 64. * 255,
-//                                                 29 / 64. * 255,
-//                                                 53 / 64. * 255,
-//                                                 21 / 64. * 255}};
-
-// static void
-// orderedDithering(u8* out, const PixelBGRA* data, const u32 width, const u32 height) noexcept {
-//     const auto argb = data;
-//     for (u32 y = 0, idx = 0; y < height; y++) {
-//         for (u32 x = 0; x < width; x++, idx++) {
-//             const auto v = *(argb + idx);
-//             const auto l = toGray(v).r;
-//             out[idx]     = l > s_bayerMatrix[x & 7][y & 7] ? 255 : 0;
-//         }
-//     }
-// }
-
 bool
 GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
     GeneralLogger::info("Starting GIF mirage encoding...");
@@ -170,7 +71,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
     GeneralLogger::info("Height: " + std::to_string(args.height), GeneralLogger::STEP);
     GeneralLogger::info("Number of frames: " + std::to_string(args.frameCount), GeneralLogger::STEP);
     GeneralLogger::info("Frame duration: " + std::to_string(args.delay), GeneralLogger::STEP);
-    GeneralLogger::info("Merge mode: " + std::to_string(args.mergeMode), GeneralLogger::STEP);
+    GeneralLogger::info("Merge mode: " + args.mergeMode.toString(), GeneralLogger::STEP);
 
     GeneralLogger::info("Reading images...");
     auto inner = GIFImage::ImageSequence::read(args.innerFile);
@@ -196,7 +97,22 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
     GeneralLogger::info(std::string("Thread count: ") + std::to_string(args.threadCount), GeneralLogger::STEP);
     auto threads = vector<std::thread>(args.threadCount);
 
-    auto isCoverFunc = IsCoverFuncs[args.mergeMode % IsCoverFuncs.size()];
+    const IsCoverFunc isCoverFunc = std::bind(
+        [](const u32 slope, const u32 width, const bool isRow, const u32 x, const u32 y) {
+            if (!slope) {
+                return (isRow ? y : x) % (width * 2) < width;
+            } else if (isRow) {
+                return (y / slope + x) % (width * 2) < width;
+            } else {
+                return (x / slope + y) % (width * 2) < width;
+            }
+        },
+        args.mergeMode.slope,
+        args.mergeMode.width,
+        args.mergeMode.isRow,
+        std::placeholders::_1,
+        std::placeholders::_2);
+
     for (u32 i = 0; i < args.threadCount; ++i) {
         threads[i] = std::thread(
             [&args,
@@ -223,7 +139,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
                                 inner->getFrameBuffer(innerIndices[j], args.width, args.height, false);
                             if (frameBuffer.empty()) return;
                             innerFrame = new u8[args.width * args.height];
-                            orderedDithering(innerFrame, frameBuffer.data(), args.width, args.height);
+                            ditherFunc(innerFrame, frameBuffer.data(), args.width, args.height);
                             innerFramesCache[innerIndices[j]] = innerFrame;
                         }
                     }
@@ -235,7 +151,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
                                 cover->getFrameBuffer(coverIndices[j], args.width, args.height, false);
                             if (frameBuffer.empty()) return;
                             coverFrame = new u8[args.width * args.height];
-                            orderedDithering(coverFrame, frameBuffer.data(), args.width, args.height);
+                            ditherFunc(coverFrame, frameBuffer.data(), args.width, args.height);
                             coverFramesCache[coverIndices[j]] = coverFrame;
                         }
                     }

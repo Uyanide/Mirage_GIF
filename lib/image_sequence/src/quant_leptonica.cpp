@@ -65,6 +65,7 @@ shrinkPalette(const vector<PixelBGRA>& palette, vector<u8>& indices, u32 colorCo
     return newPalette;
 }
 
+// ordered dithering with multiple (grayscale) colors
 static void
 orderedDithering(const vector<PixelBGRA>& pixelsAdjusted,
                  const vector<PixelBGRA>& sortedPalette,
