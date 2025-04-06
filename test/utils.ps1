@@ -27,9 +27,3 @@ function Execute-Program {
         return -1
     }
 }
-
-function Get-CurrentDirectory {
-    $currentDirectory = $PSScriptRoot
-    Log-Info "Current directory: $currentDirectory"
-    return $currentDirectory
-}

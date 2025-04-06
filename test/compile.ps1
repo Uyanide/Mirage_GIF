@@ -1,15 +1,14 @@
-. .\utils.ps1
+. $PSScriptRoot\utils.ps1
 
-$currentDirectory = Get-CurrentDirectory
 
 if ($args -contains "--configure") {
-    Remove-Item -Path "$currentDirectory\..\build" -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -Path "$currentDirectory\..\build" -ItemType Directory -Force | Out-Null
+    Remove-Item -Path "$PSScriptRoot\..\build" -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -Path "$PSScriptRoot\..\build" -ItemType Directory -Force | Out-Null
     $ret = Execute-Program -ProgramName "cmake" -ArgsList @(
         "-S",
-        "$currentDirectory\..",
+        "$PSScriptRoot\..",
         "-B",
-        "$currentDirectory\..\build",
+        "$PSScriptRoot\..\build",
         "-DVCPKG_TARGET_TRIPLET=x64-windows-static",
         "-DCMAKE_TOOLCHAIN_FILE=C:/Users/cyani/code/vcpkg/scripts/buildsystems/vcpkg.cmake"
     )
@@ -20,7 +19,7 @@ if ($args -contains "--configure") {
 
 Execute-Program -ProgramName "cmake" -ArgsList @(
     "--build",
-    "$currentDirectory\..\build",
+    "$PSScriptRoot\..\build",
     "--config",
     "RELEASE"
 )
