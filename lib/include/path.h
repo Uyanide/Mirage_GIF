@@ -47,9 +47,9 @@ static std::string
 getExtName(const std::string& str) {
     auto pos = str.find_last_of('.');
     if (pos == std::string::npos) {
-        return str;
+        return ".dat";
     }
-    return str.substr(pos + 1);
+    return str.substr(pos);
 }
 
 static std::string
