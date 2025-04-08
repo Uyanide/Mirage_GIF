@@ -22,7 +22,7 @@ extern std::ostream* logStream;
 void
 initLogStream() noexcept;
 
-static inline void
+inline void
 info(const std::string_view& msg, const LogIndent indent = GENERAL, const bool color = true) {
     std::lock_guard<std::mutex> lock(logMutex);
     initLogStream();
@@ -33,7 +33,7 @@ info(const std::string_view& msg, const LogIndent indent = GENERAL, const bool c
     *logStream << colorInfoMsg[indent] << msg << (color ? "\033[0m\n" : "\n");
 }
 
-static inline void
+inline void
 warning(const std::string_view& msg, const LogIndent indent = GENERAL, const bool color = true) {
     std::lock_guard<std::mutex> lock(logMutex);
     initLogStream();
@@ -44,7 +44,7 @@ warning(const std::string_view& msg, const LogIndent indent = GENERAL, const boo
     *logStream << (color ? "\033[33m" : "") << msg << (color ? "\033[0m\n" : "\n");
 }
 
-static inline void
+inline void
 error(const std::string_view& msg, const LogIndent indent = GENERAL, const bool color = true) {
     std::lock_guard<std::mutex> lock(logMutex);
     initLogStream();

@@ -342,7 +342,7 @@ class GdiPlusInitializer {
    public:
     GdiPlusInitializer() = default;
 
-    inline bool
+    bool
     initialize() {
         if (initialized) return true;
         if (token != 0) return false;
@@ -358,7 +358,7 @@ class GdiPlusInitializer {
         }
     }
 
-    [[nodiscard]] inline bool
+    [[nodiscard]] bool
     isInitialized() const {
         return initialized;
     }

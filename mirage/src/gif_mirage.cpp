@@ -25,11 +25,6 @@ static constexpr u32 TRANSPARENT_INDEX = 1;
 static constexpr u32 MIN_CODE_LENGTH   = 2;
 static const auto ditherFunc           = ImageSequence::Dither::BayerOrderedDithering<4>::orderedDithering;
 
-static inline constexpr u32
-u32min(const u32 a, const u32 b) {
-    return a < b ? a : b;
-}
-
 static vector<u32>
 getFrameIndices(const u32* delays, const u32 numFrames, const u32 targetDelay, const u32 targetNumFrames) {
     static const auto round = [](const double value) -> u32 { return static_cast<u32>(std::round(value)); };
@@ -211,7 +206,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
                 }
             },
             i * framesPerThread,
-            u32min((i + 1) * framesPerThread, args.frameCount));
+            std::min<u32>((i + 1) * framesPerThread, args.frameCount));
     }
 
     for (auto& thread : threads) {

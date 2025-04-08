@@ -11,7 +11,7 @@
 #include "path.h"
 using std::vector, std::span, std::string;
 
-static inline bool
+static bool
 checkCodeLengthValid(u32 minCodeLength, size_t paletteSize) {
     if (minCodeLength < 2 || minCodeLength > 8) {
         return false;
@@ -22,7 +22,7 @@ checkCodeLengthValid(u32 minCodeLength, size_t paletteSize) {
     return true;
 }
 
-static inline bool
+static bool
 checkIndexesValid(const std::span<u8>& codes, u32 minCodeLength, size_t paletteSize) {
     const auto maxIndex = paletteSize - 1;
     for (const auto& code : codes) {

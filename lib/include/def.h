@@ -44,7 +44,7 @@ using u64 = uint64_t;
 using i32 = int32_t;
 using u32 = uint32_t;
 
-static inline constexpr u8
+inline constexpr u8
 TOU8(const u32 x) {
     return static_cast<u8>(x & 0xFF);
 }
@@ -81,18 +81,18 @@ struct PixelBRAGHash {
     }
 };
 
-static inline constexpr PixelBGRA
+inline constexpr PixelBGRA
 makeBGRA(const u8 b, const u8 g, const u8 r, const u8 a = 0xff) {
     return {b, g, r, a};
 }
 
-static inline PixelBGRA
+inline PixelBGRA
 toGray(const PixelBGRA& p) {
     u8 l = TOU8((p.r * 76u + p.g * 151u + p.b * 29u) >> 8);
     return makeBGRA(l, l, l, p.a);
 }
 
-static inline PixelBGRA
+inline PixelBGRA
 preMultiply(const PixelBGRA& p) {
     u32 a = p.a;
     if (a == 0) return makeBGRA(0, 0, 0, 0xffu);
@@ -107,7 +107,7 @@ preMultiply(const PixelBGRA& p) {
  * @return square of distance, approximately in [0, 600,000)
  * @details no sqrt are applied, since sometimes we only need to compare the distances
  */
-static inline double
+inline double
 colorDistance(const PixelBGRA& e1, const PixelBGRA& e2) {
     i32 rmean = ((i32)e1.r + (i32)e2.g) / 2;
     i32 r     = (i32)e1.r - (i32)e2.r;
@@ -122,7 +122,7 @@ colorDistance(const PixelBGRA& e1, const PixelBGRA& e2) {
  * @brief distance, approximately in [0, 800)
  * @details but other times we do need the linear distances
  */
-static inline double
+inline double
 colorDistanceSqrt(const PixelBGRA& e1, const PixelBGRA& e2) {
     return std::sqrt(colorDistance(e1, e2));
 }
@@ -130,7 +130,7 @@ colorDistanceSqrt(const PixelBGRA& e1, const PixelBGRA& e2) {
 /**
  * @return hue in [0, 360)
  */
-static inline i32
+inline i32
 getHue(const PixelBGRA& p) {
     i32 r   = p.r;
     i32 g   = p.g;

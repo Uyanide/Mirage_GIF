@@ -131,7 +131,7 @@ quant(const ImageSequenceRef& image,
     return resultsRef;
 }
 
-static inline PixelBGRA
+static PixelBGRA
 genFirstPixel(const u32 lsbLevel) {
     return makeBGRA(0b00000000u | lsbLevel,  // B
                     0b00000011u,             // G
@@ -332,23 +332,23 @@ class FileReader {
         return result;
     }
 
-    [[nodiscard]] inline size_t
+    [[nodiscard]] size_t
     getSize() const {
         return m_fileSize;
     }
 
-    [[nodiscard]] inline size_t
+    [[nodiscard]] size_t
     getBytesRead() const {
         return m_chunksRead + m_bufferPos;
     }
 
-    [[nodiscard]] inline double
+    [[nodiscard]] double
     getProgress() const {
         const double ret = static_cast<double>(getBytesRead()) / static_cast<double>(m_fileSize + m_headerSize);
         return ret > 1.0 ? 1.0 : ret;
     }
 
-    [[nodiscard]] inline bool
+    [[nodiscard]] bool
     isEOF() const {
         return m_file.eof() && m_bufferPos >= m_bufferSize && m_byteBufferSize == 0;
     }
@@ -390,7 +390,7 @@ class FileReader {
         GeneralLogger::info("Mime type: " + mimeType, GeneralLogger::STEP);
     }
 
-    inline bool
+    bool
     loadChunk() {
         if (m_file.eof()) {
             m_bufferPos = m_bufferSize = 0;

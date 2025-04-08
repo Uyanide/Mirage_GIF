@@ -45,7 +45,7 @@ getLsbLevel(const PixelBGRA& pixel) {
     return pixel.b & 7;
 }
 
-static inline u32
+static u32
 toBits(const PixelBGRA& pixel, const u32 lsbLevel, const u32 mask) {
     return ((static_cast<u32>(pixel.b) & mask) | ((static_cast<u32>(pixel.g) & mask) << lsbLevel) |
             ((static_cast<u32>(pixel.r) & mask) << (2 * lsbLevel)));

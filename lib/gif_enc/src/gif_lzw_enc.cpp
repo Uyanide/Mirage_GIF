@@ -21,7 +21,7 @@ class LZWCompressImpl {
     process(const span<u8>& input);
     size_t
     finish();
-    [[nodiscard]] inline bool
+    [[nodiscard]] bool
     isFinished() const {
         return m_isFinished;
     }
@@ -29,9 +29,9 @@ class LZWCompressImpl {
    private:
     void
     _pushCode(u16 code);
-    inline void
+    void
     _reset();
-    inline void
+    void
     _onError();
 
     vector<u8> m_result;

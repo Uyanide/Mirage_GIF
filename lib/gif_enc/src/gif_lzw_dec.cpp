@@ -23,23 +23,23 @@ class LZWDecompressImpl {
     process(const span<u8>& data);
     size_t
     finish();
-    [[nodiscard]] inline bool
+    [[nodiscard]] bool
     finished() const {
         return m_finished;
     }
 
    private:
-    inline void
+    void
     _reset();
     u16
     _insertDict(u16 prev, u8 data);
     u8
     _writeCode(u16 code);
-    inline void
+    void
     _appendResult(u8 data);
-    inline void
+    void
     _flushResult(size_t maxSize);
-    inline void
+    void
     _onError();
 
     vector<u8> m_result;
@@ -248,7 +248,9 @@ GIFEnc::LZW::decompress(const span<u8>& data, const u32 minCodeSize) noexcept {
     }
     vector<u8> out;
     auto decoder = LZWDecompressImpl([&out](const span<u8>& data) { out.insert(out.end(), data.begin(), data.end()); },
-                                     [&out]() { out.clear(); }, minCodeSize, WRITE_DEFAULT_CHUNK_SIZE);
+                                     [&out]() { out.clear(); },
+                                     minCodeSize,
+                                     WRITE_DEFAULT_CHUNK_SIZE);
     decoder.process(data);
     decoder.finish();
     return out;
