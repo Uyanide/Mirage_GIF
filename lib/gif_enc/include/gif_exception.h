@@ -8,7 +8,7 @@ namespace GIFEnc {
 class GIFEncodeException final : public std::exception {
     const std::string m_msg;
 
-   public:
+  public:
     explicit GIFEncodeException(const std::string&& msg) : m_msg(msg) {}
 
     [[nodiscard]] const char*

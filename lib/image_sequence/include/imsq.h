@@ -16,7 +16,7 @@ class ImageSequence;
 using ImageSequenceRef = std::unique_ptr<ImageSequence>;
 
 class ImageSequence {
-   public:
+  public:
     static bool
     initDecoder(const char*) noexcept;
 

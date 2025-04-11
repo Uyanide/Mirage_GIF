@@ -9,14 +9,14 @@
 using std::string;
 
 class OptionInvalidException final : public std::exception {
-   public:
+  public:
     explicit OptionInvalidException(const std::string&& msg) : msg(msg) {}
     [[nodiscard]] const char*
     what() const noexcept override {
         return msg.c_str();
     }
 
-   private:
+  private:
     std::string msg;
 };
 

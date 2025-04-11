@@ -12,7 +12,7 @@
 
 namespace GIFEnc {
 class GIFEncoder {
-   public:
+  public:
     GIFEncoder() { m_finished = true; }
 
     GIFEncoder(const std::string& outPath,
@@ -45,7 +45,8 @@ class GIFEncoder {
 
     /**
      * @brief Add a frame to the GIF file.
-     * @param frame         The frame data that can be directly written to the GIF file.
+     * @param frame         The frame data that can be directly written to the
+     *                      GIF file.
      * @param delay         Frame duration in milliseconds.
      * @param minCodeLength If 0, the global one will be used.
      * @param palette       The color palette for the frame.
@@ -80,14 +81,14 @@ class GIFEncoder {
         return deLocalizePath(m_outPath);
     }
 
-   private:
+  private:
     void
     writeFile(const std::span<u8>& data);
 
     void
     writeFile(u8 byte);
 
-   private:
+  private:
     std::ofstream m_file;
     std::filesystem::path m_outPath;
     u32 m_width            = 0;

@@ -12,7 +12,7 @@ class LZWDecompressImpl {
         u8 data  = 0;          // final byte
     };
 
-   public:
+  public:
     LZWDecompressImpl(const GIFEnc::LZW::WriteCallback& write,
                       const GIFEnc::LZW::ErrorCallback& onError,
                       u32 minCodeSize,
@@ -28,7 +28,7 @@ class LZWDecompressImpl {
         return m_finished;
     }
 
-   private:
+  private:
     void
     _reset();
     u16

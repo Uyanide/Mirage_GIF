@@ -16,7 +16,7 @@ using std::string;
 class QuantizerException : public std::exception {
     const string message;
 
-   public:
+  public:
     explicit QuantizerException(const string&& msg) : message(msg) {}
     [[nodiscard]] const char*
     what() const noexcept override {

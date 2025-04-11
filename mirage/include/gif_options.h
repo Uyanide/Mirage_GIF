@@ -30,7 +30,7 @@ class Options {
         "  C/R: Direction, Column/Row\n"
         "  (e.g. S2W1R = Slope 1, Width 2, Row)";
 
-   public:
+  public:
     struct Defaults {
         static constexpr u32 width              = 640;
         static constexpr u32 height             = 640;
@@ -63,7 +63,7 @@ class Options {
     u32 threadCount    = Defaults::threadCount;
     u32 disposalMethod = Defaults::disposalMethod;
 
-   public:
+  public:
     static std::optional<Options>
     parseArgs(int argc, char** argv) noexcept;
 

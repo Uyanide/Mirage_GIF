@@ -11,7 +11,7 @@ namespace Dither {
 
 template <u8 size>
 class BayerOrderedDithering {
-   public:
+  public:
     static void
     orderedDithering(u8* out, const u8* in, u32 width, u32 height) {
         // do nothing
@@ -21,14 +21,14 @@ class BayerOrderedDithering {
 
 template <>
 class BayerOrderedDithering<4> {
-   private:
+  private:
     // {{{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}}}
     static constexpr std::array<std::array<double, 4>, 4> BAYER_MATRIX{{{0, 127.5, 31.875, 159.375},
                                                                         {191.25, 63.75, 223.125, 95.625},
                                                                         {47.8125, 175.3125, 15.9375, 143.4375},
                                                                         {239.0625, 111.5625, 207.1875, 79.6875}}};
 
-   public:
+  public:
     static void
     orderedDithering(u8* out, const PixelBGRA* data, u32 width, u32 height) noexcept {
         const auto argb = data;

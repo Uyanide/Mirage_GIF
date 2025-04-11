@@ -10,7 +10,7 @@ class LZWCompressImpl {
     static constexpr u32 MAX_CHUNK_SIZE = 255;
     using LZWNode                       = u16[MAX_DATA + 1];  // index: data; value: pointer to next node
 
-   public:
+  public:
     LZWCompressImpl(const GIFEnc::LZW::WriteCallback& write,
                     const GIFEnc::LZW::ErrorCallback& onError,
                     u32 minCodeSize,
@@ -26,7 +26,7 @@ class LZWCompressImpl {
         return m_isFinished;
     }
 
-   private:
+  private:
     void
     _pushCode(u16 code);
     void

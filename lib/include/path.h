@@ -35,11 +35,20 @@ deLocalizePath(const std::filesystem::path& path) {
 
 #else  // _WIN32
 
-inline std::string inline localizePath(const std::string& str) { return str; }
+inline std::string
+localizePath(const std::string& str) {
+    return str;
+}
 
-inline std::string inline deLocalizePath(const std::string& str) { return str; }
+inline std::string
+deLocalizePath(const std::string& str) {
+    return str;
+}
 
-inline std::string inline deLocalizePath(const std::filesystem::path& path) { return path.string(); }
+inline std::string
+deLocalizePath(const std::filesystem::path& path) {
+    return path.string();
+}
 
 #endif  // _WIN32
 

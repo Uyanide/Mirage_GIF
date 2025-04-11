@@ -27,14 +27,14 @@ struct HeaderData {
 class EOFException final : public std::exception {};
 
 class DecodingException final : public std::exception {
-   public:
+  public:
     explicit DecodingException(const string&& message) : msg(message) {}
     [[nodiscard]] const char*
     what() const noexcept override {
         return msg.c_str();
     }
 
-   private:
+  private:
     string msg;
 };
 

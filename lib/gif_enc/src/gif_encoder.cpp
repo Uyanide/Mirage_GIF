@@ -54,7 +54,8 @@ GIFEnc::GIFEncoder::GIFEncoder(const string& outPath,
     }
     if (hasGlobalColorTable) {
         if (!checkCodeLengthValid(minCodeLength, globalColorTable.size())) {
-            throw GIFEnc::GIFEncodeException("Color table size mismatch: " + std::to_string(globalColorTable.size()));
+            throw GIFEnc::GIFEncodeException("Color table size mismatch: " +
+                                             std::to_string(globalColorTable.size()));
         }
     }
     if (hasTransparency && (transparentIndex >= globalColorTable.size())) {
@@ -68,7 +69,13 @@ GIFEnc::GIFEncoder::GIFEncoder(const string& outPath,
     }
     m_file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     auto header = GIFEnc::gifHeader(
-        m_width, m_height, backgroundIndex, m_minCodeLength, loops, hasGlobalColorTable, m_globalColorTable);
+        m_width,
+        m_height,
+        backgroundIndex,
+        m_minCodeLength,
+        loops,
+        hasGlobalColorTable,
+        m_globalColorTable);
     if (header.empty()) {
         m_finished = true;
         m_file.close();
@@ -86,13 +93,19 @@ GIFEnc::GIFEncoder::~GIFEncoder() {
 
 void
 GIFEnc::GIFEncoder::addFrame(
-    const span<u8>& frame, u32 delay, u32 disposalMethod, u32 minCodeLength, const std::vector<PixelBGRA>& palette) {
+    const span<u8>& frame,
+    u32 delay,
+    u32 disposalMethod,
+    u32 minCodeLength,
+    const std::vector<PixelBGRA>& palette) {
     if (m_finished) {
         return;
     }
 
     if (m_globalColorTable.empty() && (minCodeLength == 0 || palette.empty())) {
-        throw GIFEnc::GIFEncodeException("Local palette should be provided when global color table is empty");
+        throw GIFEnc::GIFEncodeException(
+            "Local palette should be provided when global color table is "
+            "empty");
     }
 
     u32 mcl;
@@ -156,13 +169,19 @@ GIFEnc::GIFEncoder::addFrame(
 
 void
 GIFEnc::GIFEncoder::addFrameCompressed(
-    const span<u8>& frame, u32 delay, u32 disposalMethod, u32 minCodeLength, const std::vector<PixelBGRA>& palette) {
+    const span<u8>& frame,
+    u32 delay,
+    u32 disposalMethod,
+    u32 minCodeLength,
+    const std::vector<PixelBGRA>& palette) {
     if (m_finished) {
         return;
     }
 
     if (m_globalColorTable.empty() && (minCodeLength == 0 || palette.empty())) {
-        throw GIFEnc::GIFEncodeException("Local palette should be provided when global color table is empty");
+        throw GIFEnc::GIFEncodeException(
+            "Local palette should be provided when global color table is "
+            "empty");
     }
 
     u32 mcl;

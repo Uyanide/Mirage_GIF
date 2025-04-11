@@ -9,12 +9,12 @@
 namespace GIFLsb {
 
 class DecodeOptions {
-   public:
+  public:
     std::string decyptImage;
     std::string outputFile;
     std::string outputDirectory;  // ends with '/'
 
-   public:
+  public:
     static std::optional<DecodeOptions>
     parseArgs(int argc, char** argv) noexcept;
 };
@@ -33,7 +33,7 @@ class EncodeOptions {
         static constexpr u32 MAX_NUM_COLORS = 31;
     };
 
-   public:
+  public:
     std::string imageFile;
     std::string encyptFile;
     std::string markText     = Defaults::MARK_TEXT;
@@ -46,7 +46,7 @@ class EncodeOptions {
     u32 transparentThreshold = Defaults::TRANSPARENT_THRESHOLD;
     u32 threadCount          = Defaults::THREAD_COUNT;
 
-   public:
+  public:
     static std::optional<EncodeOptions>
     parseArgs(int argc, char** argv) noexcept;
 

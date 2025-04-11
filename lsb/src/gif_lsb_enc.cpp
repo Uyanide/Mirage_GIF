@@ -267,19 +267,20 @@ genPalettes(GetPaletteFunc& getPalette,
 }
 
 class FileReaderException final : public std::exception {
-   public:
+  public:
     explicit FileReaderException(const string&& message) : m_message(message) {}
+
     [[nodiscard]] const char*
     what() const noexcept override {
         return m_message.c_str();
     }
 
-   private:
+  private:
     string m_message;
 };
 
 class FileReader {
-   public:
+  public:
     FileReader(const string& filePath, const u32 lsbLevel) : m_bitsPerPixel(lsbLevel * 3), m_buffer(READ_CHUNK_SIZE) {
         m_fileName = getFileName(filePath);
         m_filePath = std::filesystem::path(localizePath(filePath));
@@ -356,7 +357,7 @@ class FileReader {
         return m_file.eof() && m_bufferPos >= m_bufferSize && m_byteBufferSize == 0;
     }
 
-   private:
+  private:
     void
     setHeader() {
         vector<u8> header;

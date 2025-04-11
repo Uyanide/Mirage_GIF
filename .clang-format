@@ -1,63 +1,34 @@
 BasedOnStyle: Google
 
-Language: Cpp
-
-AccessModifierOffset: -1
-
-AlignAfterOpenBracket: Align
+AccessModifierOffset: -2
 
 AlignConsecutiveAssignments: true
 
-AlignConsecutiveDeclarations: false
+AllowAllArgumentsOnNextLine: false
 
-AlignConsecutiveMacros: true
-
-AllowAllArgumentsOnNextLine: true
-
-PackConstructorInitializers: CurrentLine
-
-AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
 
 AllowShortBlocksOnASingleLine: Empty
 
-AllowShortCaseLabelsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
 
 AllowShortFunctionsOnASingleLine: Inline
 
-AllowShortLambdasOnASingleLine: Inline
-
-AllowShortLoopsOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
 
 BreakAfterReturnType: All
 
-BreakTemplateDeclarations: Yes
-
 BinPackArguments: false
+
 BinPackParameters: false
 
-BreakBeforeBraces: Attach
-
-AlignOperands: Align
-
-BreakBeforeBinaryOperators: None
-
-BreakBeforeTernaryOperators: true
-
-BreakConstructorInitializers: BeforeColon
-
-BreakInheritanceList: BeforeColon
-
-BreakStringLiterals: true
-
-ColumnLimit: 120
+ColumnLimit: 0
 
 CompactNamespaces: false
 
 ContinuationIndentWidth: 4
 
 Cpp11BracedListStyle: true
-
-PointerAlignment: Left
 
 EmptyLineBeforeAccessModifier: LogicalBlock
 
@@ -75,10 +46,6 @@ IncludeCategories:
     - Regex: '.*'
       Priority: 3
 
-IndentCaseLabels: true
-
-IndentPPDirectives: None
-
 IndentWidth: 4
 
 KeepEmptyLines:
@@ -87,49 +54,6 @@ KeepEmptyLines:
     AtStartOfFile: false
 
 MaxEmptyLinesToKeep: 1
-
-NamespaceIndentation: None
-
-ReflowComments: Always
-
-SpaceAfterCStyleCast: false
-
-SpaceAfterLogicalNot: false
-
-SpaceAfterTemplateKeyword: true
-
-SpaceBeforeAssignmentOperators: true
-
-SpaceBeforeCpp11BracedList: false
-
-SpaceBeforeCtorInitializerColon: true
-
-SpaceBeforeInheritanceColon: true
-
-SpaceBeforeParens: Custom
-SpaceBeforeParensOptions:
-    AfterControlStatements: true
-    AfterForeachMacros: false
-    AfterFunctionDeclarationName: false
-    AfterFunctionDefinitionName: false
-    AfterIfMacros: true
-    AfterOverloadedOperator: false
-    AfterPlacementOperator: false
-    AfterRequiresInClause: false
-    AfterRequiresInExpression: false
-    BeforeNonEmptyParentheses: false
-
-SpaceBeforeRangeBasedForLoopColon: true
-
-SpaceBeforeSquareBrackets: false
-
-SpaceInEmptyParentheses: false
-
-SpacesBeforeTrailingComments: 2
-
-SpacesInAngles: Never
-
-SpacesInParens: Never
 
 TabWidth: 4
 

@@ -16,7 +16,7 @@
 using std::string, std::vector, std::wstring;
 
 class ImageSequenceImpl : public GIFImage::ImageSequence {
-   public:
+  public:
     ImageSequenceImpl(const std::string& filename);
 
     ~ImageSequenceImpl();
@@ -44,7 +44,7 @@ class ImageSequenceImpl : public GIFImage::ImageSequence {
     std::vector<PixelBGRA>
     getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept override;
 
-   private:
+  private:
     vector<Magick::Image> m_images;
     std::vector<u32> m_delays;
     u32 m_width  = 0;
@@ -62,7 +62,7 @@ GIFImage::ImageSequence::initDecoder(const char* arg0) noexcept {
 }
 
 class ImageParseException final : public std::exception {
-   public:
+  public:
     explicit ImageParseException(const std::string&& message) : m_msg(message) {}
 
     const char*
@@ -70,7 +70,7 @@ class ImageParseException final : public std::exception {
         return m_msg.c_str();
     }
 
-   private:
+  private:
     std::string m_msg;
 };
 

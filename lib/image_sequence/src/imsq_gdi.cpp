@@ -23,7 +23,7 @@ using std::string, std::vector, std::wstring;
 static constexpr const char* FALLBACK_FONT = "Arial";
 
 class ImageParseException final : public std::exception {
-   public:
+  public:
     explicit ImageParseException(const std::string&& message) : m_msg(message) {}
 
     [[nodiscard]] const char*
@@ -31,12 +31,12 @@ class ImageParseException final : public std::exception {
         return m_msg.c_str();
     }
 
-   private:
+  private:
     std::string m_msg;
 };
 
 class ImageSequenceImpl : public GIFImage::ImageSequence {
-   public:
+  public:
     explicit ImageSequenceImpl(const std::string& filename);
 
     ~ImageSequenceImpl() override;
@@ -64,7 +64,7 @@ class ImageSequenceImpl : public GIFImage::ImageSequence {
     std::vector<PixelBGRA>
     getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept override;
 
-   private:
+  private:
     Gdiplus::Image* m_image                = nullptr;
     Gdiplus::PropertyItem* m_delayPropItem = nullptr;
     std::vector<u32> m_delays;
@@ -74,7 +74,7 @@ class ImageSequenceImpl : public GIFImage::ImageSequence {
 };
 
 class ImageSequenceWebpImpl : public GIFImage::ImageSequence {
-   public:
+  public:
     explicit ImageSequenceWebpImpl(const std::string& filename);
     ~ImageSequenceWebpImpl() override;
 
@@ -97,7 +97,7 @@ class ImageSequenceWebpImpl : public GIFImage::ImageSequence {
     std::vector<PixelBGRA>
     getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept override;
 
-   private:
+  private:
     WebPData m_webpData{};
     WebPDemuxer* m_demux = nullptr;
     WebPDecoderConfig m_config{};
@@ -288,14 +288,26 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
                 Gdiplus::RectF srcRect;
                 if (targetAspect > imageAspect) {
                     float newHeight = static_cast<double>(srcWidth) / targetAspect;
-                    srcRect = Gdiplus::RectF(0, (srcHeight - newHeight) / 2, static_cast<float>(srcWidth), newHeight);
+                    srcRect         = Gdiplus::RectF(
+                        0,
+                        (srcHeight - newHeight) / 2,
+                        static_cast<float>(srcWidth),
+                        newHeight);
                 } else {
                     float newWidth = static_cast<double>(srcHeight) * targetAspect;
-                    srcRect = Gdiplus::RectF((srcWidth - newWidth) / 2, 0, newWidth, static_cast<float>(srcHeight));
+                    srcRect        = Gdiplus::RectF(
+                        (srcWidth - newWidth) / 2,
+                        0,
+                        newWidth,
+                        static_cast<float>(srcHeight));
                 }
 
                 Gdiplus::Bitmap srcBitmap(
-                    srcWidth, srcHeight, srcWidth * 4, PixelFormat32bppARGB, reinterpret_cast<u8*>(tempBuffer.data()));
+                    srcWidth,
+                    srcHeight,
+                    srcWidth * 4,
+                    PixelFormat32bppARGB,
+                    reinterpret_cast<u8*>(tempBuffer.data()));
                 Gdiplus::Bitmap bitmap(width, height, PixelFormat32bppARGB);
 
                 Gdiplus::Graphics graphics(&bitmap);
@@ -306,7 +318,13 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
 
                 Gdiplus::RectF destRect(0, 0, static_cast<float>(width), static_cast<float>(height));
                 graphics.DrawImage(
-                    &srcBitmap, destRect, srcRect.X, srcRect.Y, srcRect.Width, srcRect.Height, Gdiplus::UnitPixel);
+                    &srcBitmap,
+                    destRect,
+                    srcRect.X,
+                    srcRect.Y,
+                    srcRect.Width,
+                    srcRect.Height,
+                    Gdiplus::UnitPixel);
 
                 Gdiplus::BitmapData bitmapData;
                 Gdiplus::Rect lockRect(0, 0, width, height);
@@ -335,11 +353,11 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
 }
 
 class GdiPlusInitializer {
-   private:
+  private:
     ULONG_PTR token  = 0;
     bool initialized = false;
 
-   public:
+  public:
     GdiPlusInitializer() = default;
 
     bool
@@ -480,10 +498,10 @@ ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureA
                 Gdiplus::RectF srcRect;
                 if (targetAspect > imageAspect) {
                     float newHeight = static_cast<float>(srcWidth) / targetAspect;
-                    srcRect = Gdiplus::RectF(0, (srcHeight - newHeight) / 2, static_cast<float>(srcWidth), newHeight);
+                    srcRect         = Gdiplus::RectF(0, (srcHeight - newHeight) / 2, static_cast<float>(srcWidth), newHeight);
                 } else {
                     float newWidth = static_cast<float>(srcHeight) * targetAspect;
-                    srcRect = Gdiplus::RectF((srcWidth - newWidth) / 2, 0, newWidth, static_cast<float>(srcHeight));
+                    srcRect        = Gdiplus::RectF((srcWidth - newWidth) / 2, 0, newWidth, static_cast<float>(srcHeight));
                 }
 
                 bitmap = new Gdiplus::Bitmap(width, height, PixelFormat32bppARGB);
@@ -496,7 +514,13 @@ ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureA
 
                 Gdiplus::RectF destRect(0, 0, static_cast<float>(width), static_cast<float>(height));
                 graphics.DrawImage(
-                    m_image, destRect, srcRect.X, srcRect.Y, srcRect.Width, srcRect.Height, Gdiplus::UnitPixel);
+                    m_image,
+                    destRect,
+                    srcRect.X,
+                    srcRect.Y,
+                    srcRect.Width,
+                    srcRect.Height,
+                    Gdiplus::UnitPixel);
                 if (graphics.GetLastStatus() != Gdiplus::Ok) {
                     throw ImageParseException("Failed to draw image. Error code: " +
                                               std::to_string(graphics.GetLastStatus()));
