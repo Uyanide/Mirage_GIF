@@ -1,10 +1,140 @@
 BasedOnStyle: Google
-IndentWidth: 4
-ColumnLimit: 120
-AlwaysBreakAfterReturnType: All
-UseTab: Never
+
+Language: Cpp
+
+AccessModifierOffset: -1
+
+AlignAfterOpenBracket: Align
+
 AlignConsecutiveAssignments: true
+
+AlignConsecutiveDeclarations: false
+
+AlignConsecutiveMacros: true
+
+AllowAllArgumentsOnNextLine: true
+
+PackConstructorInitializers: CurrentLine
+
+AllowAllParametersOfDeclarationOnNextLine: true
+
+AllowShortBlocksOnASingleLine: Empty
+
+AllowShortCaseLabelsOnASingleLine: false
+
+AllowShortFunctionsOnASingleLine: Inline
+
+AllowShortLambdasOnASingleLine: Inline
+
+AllowShortLoopsOnASingleLine: true
+
+BreakAfterReturnType: All
+
+BreakTemplateDeclarations: Yes
+
 BinPackArguments: false
 BinPackParameters: false
+
+BreakBeforeBraces: Attach
+
+AlignOperands: Align
+
+BreakBeforeBinaryOperators: None
+
+BreakBeforeTernaryOperators: true
+
 BreakConstructorInitializers: BeforeColon
+
+BreakInheritanceList: BeforeColon
+
 BreakStringLiterals: true
+
+ColumnLimit: 120
+
+CompactNamespaces: false
+
+ContinuationIndentWidth: 4
+
+Cpp11BracedListStyle: true
+
+PointerAlignment: Left
+
+EmptyLineBeforeAccessModifier: LogicalBlock
+
+FixNamespaceComments: true
+
+IncludeBlocks: Regroup
+SortIncludes: true
+IncludeCategories:
+    - Regex: '^<ext/.*\.h>'
+      Priority: 2
+    - Regex: '^<.*\.h>'
+      Priority: 1
+    - Regex: '^<.*'
+      Priority: 2
+    - Regex: '.*'
+      Priority: 3
+
+IndentCaseLabels: true
+
+IndentPPDirectives: None
+
+IndentWidth: 4
+
+KeepEmptyLines:
+    AtEndOfFile: true
+    AtStartOfBlock: true
+    AtStartOfFile: false
+
+MaxEmptyLinesToKeep: 1
+
+NamespaceIndentation: None
+
+ReflowComments: Always
+
+SpaceAfterCStyleCast: false
+
+SpaceAfterLogicalNot: false
+
+SpaceAfterTemplateKeyword: true
+
+SpaceBeforeAssignmentOperators: true
+
+SpaceBeforeCpp11BracedList: false
+
+SpaceBeforeCtorInitializerColon: true
+
+SpaceBeforeInheritanceColon: true
+
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+    AfterControlStatements: true
+    AfterForeachMacros: false
+    AfterFunctionDeclarationName: false
+    AfterFunctionDefinitionName: false
+    AfterIfMacros: true
+    AfterOverloadedOperator: false
+    AfterPlacementOperator: false
+    AfterRequiresInClause: false
+    AfterRequiresInExpression: false
+    BeforeNonEmptyParentheses: false
+
+SpaceBeforeRangeBasedForLoopColon: true
+
+SpaceBeforeSquareBrackets: false
+
+SpaceInEmptyParentheses: false
+
+SpacesBeforeTrailingComments: 2
+
+SpacesInAngles: Never
+
+SpacesInParens: Never
+
+TabWidth: 4
+
+UseTab: Never
+
+SeparateDefinitionBlocks: Always
+
+QualifierAlignment: Left

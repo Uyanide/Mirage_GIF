@@ -69,7 +69,9 @@ LZWCompressImpl::LZWCompressImpl(const GIFEnc::LZW::WriteCallback& write,
     _pushCode(m_clearCode);
 }
 
-LZWCompressImpl::~LZWCompressImpl() { delete[] m_dict; }
+LZWCompressImpl::~LZWCompressImpl() {
+    delete[] m_dict;
+}
 
 void
 LZWCompressImpl::process(const span<u8>& input) {

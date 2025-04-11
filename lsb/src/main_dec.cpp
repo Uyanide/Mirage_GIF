@@ -58,7 +58,7 @@ GeneralLogger::initLogStream() noexcept {
 #pragma message("Mocking command line arguments.")
 #endif
 
-#define ARGC 2
+#define ARGC 3
 #define ARGLEN 255
 
 char**

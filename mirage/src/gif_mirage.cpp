@@ -27,7 +27,9 @@ static const auto ditherFunc           = ImageSequence::Dither::BayerOrderedDith
 
 static vector<u32>
 getFrameIndices(const u32* delays, const u32 numFrames, const u32 targetDelay, const u32 targetNumFrames) {
-    static const auto round = [](const double value) -> u32 { return static_cast<u32>(std::round(value)); };
+    static const auto round = [](const double value) -> u32 {
+        return static_cast<u32>(std::round(value));
+    };
 
     u32 srcDuration = 0;
     for (u32 i = 0; i < numFrames; ++i) {
@@ -80,9 +82,13 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
         getFrameIndices(cover->getDelays().data(), cover->getFrameCount(), args.delay, args.frameCount);
 
     GeneralLogger::info("Generating frames...");
-    u8** innerFramesCache = new u8* [inner->getFrameCount()] { nullptr };  // GrayScale
+    u8** innerFramesCache = new u8* [inner->getFrameCount()] {
+        nullptr
+    };  // GrayScale
     std::mutex innerMutex;
-    u8** coverFramesCache = new u8* [cover->getFrameCount()] { nullptr };  // GrayScale
+    u8** coverFramesCache = new u8* [cover->getFrameCount()] {
+        nullptr
+    };  // GrayScale
     std::mutex coverMutex;
     vector<vector<u8>> outFrames(args.frameCount);  // GrayScale
     std::mutex cntMutex;

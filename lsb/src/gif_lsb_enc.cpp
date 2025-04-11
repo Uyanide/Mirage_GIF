@@ -237,7 +237,10 @@ genPalettes(GetPaletteFunc& getPalette,
         }
         fillPalette(globalResult.palette, lsbLevel, minCodeLength);
         const auto globalPaletteRef = std::make_shared<vector<PixelBGRA>>(std::move(globalResult.palette));
-        getPalette = [globalPaletteRef](u32 _) -> const vector<PixelBGRA>* { return globalPaletteRef.get(); };
+
+        getPalette = [globalPaletteRef](u32 _) -> const vector<PixelBGRA>* {
+            return globalPaletteRef.get();
+        };
         // transform local palettes to global palette indices
         u32 combinedIdx = 0;
         for (u32 fIdx = 0; fIdx < frameCount; ++fIdx) {

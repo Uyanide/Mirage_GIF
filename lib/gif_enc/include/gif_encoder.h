@@ -14,6 +14,7 @@ namespace GIFEnc {
 class GIFEncoder {
    public:
     GIFEncoder() { m_finished = true; }
+
     GIFEncoder(const std::string& outPath,
                u32 width,
                u32 height,
@@ -80,10 +81,10 @@ class GIFEncoder {
     }
 
    private:
-    inline void
+    void
     writeFile(const std::span<u8>& data);
 
-    inline void
+    void
     writeFile(u8 byte);
 
    private:
