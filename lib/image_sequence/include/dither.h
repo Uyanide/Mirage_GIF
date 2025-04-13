@@ -9,11 +9,11 @@
 namespace ImageSequence {
 namespace Dither {
 
-template <u8 size>
+template <uint8_t size>
 class BayerOrderedDithering {
   public:
     static void
-    orderedDithering(u8* out, const u8* in, u32 width, u32 height) {
+    orderedDithering(uint8_t* out, const uint8_t* in, uint32_t width, uint32_t height) {
         // do nothing
         return;
     }
@@ -30,10 +30,10 @@ class BayerOrderedDithering<4> {
 
   public:
     static void
-    orderedDithering(u8* out, const PixelBGRA* data, u32 width, u32 height) noexcept {
+    orderedDithering(uint8_t* out, const PixelBGRA* data, uint32_t width, uint32_t height) noexcept {
         const auto argb = data;
-        for (u32 y = 0, idx = 0; y < height; y++) {
-            for (u32 x = 0; x < width; x++, idx++) {
+        for (uint32_t y = 0, idx = 0; y < height; y++) {
+            for (uint32_t x = 0; x < width; x++, idx++) {
                 const auto v = *(argb + idx);
                 const auto l = toGray(v).r;
                 out[idx]     = double(l) > (BAYER_MATRIX[x & 3][y & 3]) ? 255 : 0;

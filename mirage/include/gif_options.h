@@ -9,9 +9,9 @@
 namespace GIFMirage {
 
 struct MergeMode {
-    u32 slope  = 0;     // 0-4
-    u32 width  = 0;     // 0-4
-    bool isRow = true;  // true: row, false: column
+    uint32_t slope = 0;     // 0-4
+    uint32_t width = 0;     // 0-4
+    bool isRow     = true;  // true: row, false: column
 
     static std::optional<MergeMode>
     parse(const std::string& str) noexcept;
@@ -32,36 +32,36 @@ class Options {
 
   public:
     struct Defaults {
-        static constexpr u32 width              = 640;
-        static constexpr u32 height             = 640;
-        static constexpr u32 frameCount         = 30;
-        static constexpr u32 delay              = 80;
-        static constexpr std::string mergeMode  = "S2W1C";
-        static constexpr const char* outputFile = "output.gif";
-        static constexpr u32 threadCount        = 0;  // 0 means auto-detect
-        static constexpr u32 disposalMethod     = 3;
+        static constexpr uint32_t width          = 640;
+        static constexpr uint32_t height         = 640;
+        static constexpr uint32_t frameCount     = 30;
+        static constexpr uint32_t delay          = 80;
+        static constexpr std::string mergeMode   = "S2W1C";
+        static constexpr const char* outputFile  = "output.gif";
+        static constexpr uint32_t threadCount    = 0;  // 0 means auto-detect
+        static constexpr uint32_t disposalMethod = 3;
     };
 
     struct Limits {
-        static constexpr u32 width          = 4096;
-        static constexpr u32 height         = 4096;
-        static constexpr u32 frameCount     = 1000;
-        static constexpr u32 delay          = 65535;  // max of u16
-        static constexpr u32 modeSlope      = 4;
-        static constexpr u32 modeWidth      = 4;
-        static constexpr u32 disposalMethod = 3;
+        static constexpr uint32_t width          = 4096;
+        static constexpr uint32_t height         = 4096;
+        static constexpr uint32_t frameCount     = 1000;
+        static constexpr uint32_t delay          = 65535;  // max of u16
+        static constexpr uint32_t modeSlope      = 4;
+        static constexpr uint32_t modeWidth      = 4;
+        static constexpr uint32_t disposalMethod = 3;
     };
 
     std::string innerFile;
     std::string coverFile;
     std::string outputFile = Defaults::outputFile;
-    u32 width              = Defaults::width;
-    u32 height             = Defaults::height;
-    u32 frameCount         = Defaults::frameCount;
-    u32 delay              = Defaults::delay;
+    uint32_t width         = Defaults::width;
+    uint32_t height        = Defaults::height;
+    uint32_t frameCount    = Defaults::frameCount;
+    uint32_t delay         = Defaults::delay;
     MergeMode mergeMode;
-    u32 threadCount    = Defaults::threadCount;
-    u32 disposalMethod = Defaults::disposalMethod;
+    uint32_t threadCount    = Defaults::threadCount;
+    uint32_t disposalMethod = Defaults::disposalMethod;
 
   public:
     static std::optional<Options>

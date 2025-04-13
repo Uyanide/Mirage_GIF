@@ -35,6 +35,7 @@ add_executable(GIFLsb-enc
     ${CMAKE_CURRENT_LIST_DIR}/src/main_enc.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/MimeTypes.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/options_enc.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mark.cpp
 )
 
 target_link_directories(GIFLsb-enc PRIVATE

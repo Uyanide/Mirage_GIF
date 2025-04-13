@@ -21,34 +21,34 @@ class ImageSequenceImpl : public GIFImage::ImageSequence {
 
     ~ImageSequenceImpl();
 
-    std::vector<u32>&
+    std::vector<uint32_t>&
     getDelays() noexcept override {
         return m_delays;
     }
 
-    u32
+    uint32_t
     getFrameCount() const noexcept override {
         return m_delays.size();
     }
 
-    u32
+    uint32_t
     getWidth() const noexcept override {
         return m_width;
     }
 
-    u32
+    uint32_t
     getHeight() const noexcept override {
         return m_height;
     }
 
     std::vector<PixelBGRA>
-    getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept override;
+    getFrameBuffer(uint32_t index, uint32_t width, uint32_t height, bool ensureAccurate) noexcept override;
 
   private:
     vector<Magick::Image> m_images;
-    std::vector<u32> m_delays;
-    u32 m_width  = 0;
-    u32 m_height = 0;
+    std::vector<uint32_t> m_delays;
+    uint32_t m_width  = 0;
+    uint32_t m_height = 0;
 };
 
 bool
@@ -86,7 +86,7 @@ GIFImage::ImageSequence::read(const std::string& filename) noexcept {
 
 ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
     try {
-        vector<u8> data;
+        vector<uint8_t> data;
         const auto filePath = std::filesystem::path(localizePath(filename));
         if (!std::filesystem::exists(filePath)) {
             throw ImageParseException("File not found: " + filename);
@@ -134,7 +134,7 @@ ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
 }
 
 std::vector<PixelBGRA>
-ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept {
+ImageSequenceImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t height, bool ensureAccurate) noexcept {
     if (index >= m_images.size()) {
         index %= m_images.size();
     }
@@ -166,7 +166,7 @@ ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureA
 
         image.type(Magick::TrueColorMatteType);
 
-        std::vector<u8> buffer(width * height * 4);
+        std::vector<uint8_t> buffer(width * height * 4);
 
         const Magick::PixelPacket* pixels = image.getConstPixels(0, 0, width, height);
 
@@ -174,16 +174,16 @@ ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureA
             for (size_t x = 0; x < width; ++x) {
                 const auto& pixel = pixels[y * width + x];
                 size_t idx        = (y * width + x) * 4;
-                buffer[idx + 2]   = static_cast<u8>(pixel.red);
-                buffer[idx + 1]   = static_cast<u8>(pixel.green);
-                buffer[idx + 0]   = static_cast<u8>(pixel.blue);
-                buffer[idx + 3]   = static_cast<u8>(pixel.opacity);
+                buffer[idx + 2]   = static_cast<uint8_t>(pixel.red);
+                buffer[idx + 1]   = static_cast<uint8_t>(pixel.green);
+                buffer[idx + 0]   = static_cast<uint8_t>(pixel.blue);
+                buffer[idx + 3]   = static_cast<uint8_t>(pixel.opacity);
             }
         }
 
         return buffer;
     } catch (...) {
-        return std::vector<u8>();
+        return std::vector<uint8_t>();
     }
 }
 

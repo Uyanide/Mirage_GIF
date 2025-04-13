@@ -4,12 +4,12 @@
 #include <vector>
 using std::vector, std::string;
 
-std::vector<u8>
-GIFEnc::gifHeader(const u32 width,
-                  const u32 height,
-                  const u32 backgroundIndex,
-                  const u32 minCodeLength,
-                  const u32 loops,
+std::vector<uint8_t>
+GIFEnc::gifHeader(const uint32_t width,
+                  const uint32_t height,
+                  const uint32_t backgroundIndex,
+                  const uint32_t minCodeLength,
+                  const uint32_t loops,
                   const bool hasGlobalColorTable,
                   const std::vector<PixelBGRA>& globalColorTable) noexcept {
     if (minCodeLength < 2 || minCodeLength > 8) {
@@ -23,7 +23,7 @@ GIFEnc::gifHeader(const u32 width,
             return {};
         }
     }
-    vector<u8> ret{
+    vector<uint8_t> ret{
         0x47,
         0x49,
         0x46,
@@ -40,7 +40,7 @@ GIFEnc::gifHeader(const u32 width,
     };
     ret.reserve(ret.size() + ((1u << minCodeLength) * 3) + 19);
     if (hasGlobalColorTable) {
-        for (u32 i = 0; i < (1u << minCodeLength); i++) {
+        for (uint32_t i = 0; i < (1u << minCodeLength); i++) {
             if (static_cast<size_t>(i) >= globalColorTable.size()) {
                 ret.push_back(0);
                 ret.push_back(0);
@@ -52,7 +52,7 @@ GIFEnc::gifHeader(const u32 width,
             }
         }
     }
-    const vector<u8> appExt{
+    const vector<uint8_t> appExt{
         0x21,
         0xFF,
         0x0B,  // Application Extension
@@ -77,14 +77,14 @@ GIFEnc::gifHeader(const u32 width,
     return ret;
 }
 
-std::vector<u8>
-GIFEnc::gifFrameHeader(u32 width,
-                       u32 height,
-                       u32 delay,
+std::vector<uint8_t>
+GIFEnc::gifFrameHeader(uint32_t width,
+                       uint32_t height,
+                       uint32_t delay,
                        bool hasTransparency,
-                       u32 transparentIndex,
-                       u32 disposalMethod,
-                       u32 minCodeLength,
+                       uint32_t transparentIndex,
+                       uint32_t disposalMethod,
+                       uint32_t minCodeLength,
                        const std::vector<PixelBGRA>& palette) noexcept {
     if (minCodeLength < 2 || minCodeLength > 8) {
         return {};
@@ -101,7 +101,7 @@ GIFEnc::gifFrameHeader(u32 width,
         return {};
     }
     delay /= 10;
-    vector<u8> ret{
+    vector<uint8_t> ret{
         0x21,
         0xF9,
         0x04,  // Graphic Control Extension
@@ -138,25 +138,25 @@ GIFEnc::gifFrameHeader(u32 width,
     return ret;
 }
 
-vector<u8>
+vector<uint8_t>
 GIFEnc::gifApplicationExtension(const string& identifier,
                                 const string& authentication,
-                                const vector<u8>& data) noexcept {
+                                const vector<uint8_t>& data) noexcept {
     if (identifier.size() != 8 || authentication.size() != 3) {
         return {};
     }
     const auto size = identifier.size() + authentication.size() + (data.size() + 254) / 255 + data.size() + 1;
-    vector<u8> ret{
+    vector<uint8_t> ret{
         0x21,
         0xFF,
         0x0B,  // 11 bytes
     };
     ret.reserve(size);
     for (const auto c : identifier) {
-        ret.push_back(static_cast<u8>(c));
+        ret.push_back(static_cast<uint8_t>(c));
     }
     for (auto c : authentication) {
-        ret.push_back(static_cast<u8>(c));
+        ret.push_back(static_cast<uint8_t>(c));
     }
     if (data.empty()) ret.push_back(0);
     for (size_t i = 0; i < data.size(); i += 255) {

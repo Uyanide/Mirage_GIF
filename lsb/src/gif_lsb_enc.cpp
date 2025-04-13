@@ -14,6 +14,7 @@
 #include "gif_lsb.h"
 #include "imsq.h"
 #include "log.h"
+#include "mark.h"
 #include "path.h"
 #include "quantizer.h"
 
@@ -22,15 +23,15 @@ using namespace GIFImage;
 using namespace GIFLsb;
 using namespace GIFEnc;
 
-static constexpr size_t READ_CHUNK_SIZE = 1 << 20;  // 1 MiB, should be enough to fit header
+static constexpr size_t READ_CHUNK_SIZE = 1 << 24;  // 16 MiB
 // static const string ENCODED_FILE_NAME   = "mtk";
 static constexpr double PROGRESS_STEP = 0.0314;  // 3.14%
 
 // (1 << (3 * lsbLevel)) * numColors + 2 < 1 << minCodeLength
 //                                     ^ these 2: header pixel & transparent color (if any)
 // info-density: 3 * lsbLevel / minCodeLength
-static std::pair<u32, u32>
-getLsbLevelAndMinCodeLength(const u32 numColors) {
+static std::pair<uint32_t, uint32_t>
+getLsbLevelAndMinCodeLength(const uint32_t numColors) {
     if (numColors <= 3) {
         return {2, 8};
     } else if (numColors <= 7) {
@@ -45,7 +46,7 @@ getLsbLevelAndMinCodeLength(const u32 numColors) {
 }
 
 static DitherMode
-getDitherMode(const bool disableDither, const u32 frameCount, const bool grayscale) {
+getDitherMode(const bool disableDither, const uint32_t frameCount, const bool grayscale) {
     // if disabled by user
     if (disableDither) {
         return DitherNone;
@@ -69,12 +70,15 @@ getDitherMode(const bool disableDither, const u32 frameCount, const bool graysca
 static std::shared_ptr<vector<QuantizerResult>>
 quant(const ImageSequenceRef& image,
       const EncodeOptions& args,
-      const u32 numColors,
+      const vector<PixelBGRA>& markImage,
+      const uint32_t markWidth,
+      const uint32_t markHeight,
+      const uint32_t numColors,
       const DitherMode ditherMode,
-      const u32 frameCount,
-      const u32 width,
-      const u32 height) {
-    u32 quantizedFrameCount = 0;
+      const uint32_t frameCount,
+      const uint32_t width,
+      const uint32_t height) {
+    uint32_t quantizedFrameCount = 0;
     std::mutex cntMutex;
     auto resultsRef = std::make_shared<vector<QuantizerResult>>(frameCount);
     std::mutex mutex;
@@ -86,18 +90,19 @@ quant(const ImageSequenceRef& image,
                                std::to_string(frameCount));
         threadCount = frameCount;
     }
-    const u32 framePerThread = (frameCount + threadCount - 1) / threadCount;
+    const uint32_t framePerThread = (frameCount + threadCount - 1) / threadCount;
 
-    for (u32 i = 0; i < threadCount; ++i) {
+    for (uint32_t i = 0; i < threadCount; ++i) {
         threads.push_back(std::thread([&, i]() {
-            u32 startFrame = i * framePerThread;
-            u32 endFrame   = startFrame + framePerThread;
+            uint32_t startFrame = i * framePerThread;
+            uint32_t endFrame   = startFrame + framePerThread;
             if (endFrame > frameCount) endFrame = frameCount;
-            for (u32 j = startFrame; j < endFrame; ++j) {
-                auto frameBuffer = image->getFrameBuffer(j, width, height, false);
-                if (args.markText != "none") {
-                    span<PixelBGRA> frameSpan(frameBuffer.data(), width * height);
-                    ImageSequence::drawText(frameSpan, width, height, args.markText);
+            for (uint32_t j = startFrame; j < endFrame; ++j) {
+                auto frameBuffer = image->getFrameBuffer(j, width, height);
+                if (!markImage.empty()) {
+                    ImageSequence::drawMark(frameBuffer, width, height, markImage, markWidth, markHeight, 0, 0);
+                } else if (args.markText != "none") {
+                    ImageSequence::drawText(frameBuffer, width, height, args.markText);
                 }
                 {
                     auto result = quantize(frameBuffer,
@@ -132,7 +137,7 @@ quant(const ImageSequenceRef& image,
 }
 
 static PixelBGRA
-genFirstPixel(const u32 lsbLevel) {
+genFirstPixel(const uint32_t lsbLevel) {
     return makeBGRA(0b00000000u | lsbLevel,  // B
                     0b00000011u,             // G
                     0b00000000u,             // r
@@ -143,19 +148,19 @@ genFirstPixel(const u32 lsbLevel) {
 // with color of the first pixel at position (end - 2)
 // and transparent color at position (end - 1)
 static void
-fillPalette(std::vector<PixelBGRA>& palette, const u32 lsbLevel, const u32 minCodeLength) {
-    const u32 scale    = 1 << (3 * lsbLevel);
-    const u32 origSize = palette.size();
+fillPalette(std::vector<PixelBGRA>& palette, const uint32_t lsbLevel, const uint32_t minCodeLength) {
+    const uint32_t scale    = 1 << (3 * lsbLevel);
+    const uint32_t origSize = palette.size();
     palette.resize(1u << minCodeLength, PixelBGRA{0, 0, 0, 0xffu});
-    const u8 mask = TOU8(~((1u << lsbLevel) - 1u));  // e.g. 0b11111100
-    for (u32 idx = 0; idx < origSize; ++idx) {
+    const uint8_t mask = TOU8(~((1u << lsbLevel) - 1u));  // e.g. 0b11111100
+    for (uint32_t idx = 0; idx < origSize; ++idx) {
         const auto& p = palette[idx];
         palette[idx]  = makeBGRA(p.b & mask, p.g & mask, p.r & mask, p.a);
     }
-    const u8 maskRev = ~mask;  // e.g. 0b00000011
-    u32 idx          = origSize;
-    for (u32 code = 1; code < scale; ++code) {
-        for (u32 offset = 0; offset < origSize; ++offset, ++idx) {
+    const uint8_t maskRev = ~mask;  // e.g. 0b00000011
+    uint32_t idx          = origSize;
+    for (uint32_t code = 1; code < scale; ++code) {
+        for (uint32_t offset = 0; offset < origSize; ++offset, ++idx) {
             const auto& p = palette[offset];
             palette[idx]  = makeBGRA((p.b | TOU8(code & maskRev)),
                                     (p.g | TOU8((code >> lsbLevel) & maskRev)),
@@ -172,22 +177,25 @@ fillPalette(std::vector<PixelBGRA>& palette, const u32 lsbLevel, const u32 minCo
 }
 
 // return empty vector if quantization for this frame failed
-using GetPaletteFunc = std::function<const vector<PixelBGRA>*(u32 frameIndex)>;
-using GetIndicesFunc = std::function<const vector<u8>*(u32 frameIndex)>;
+using GetPaletteFunc = std::function<const vector<PixelBGRA>*(uint32_t frameIndex)>;
+using GetIndicesFunc = std::function<const vector<uint8_t>*(uint32_t frameIndex)>;
 
 static bool
 genPalettes(GetPaletteFunc& getPalette,
             GetIndicesFunc& getIndices,
             const EncodeOptions& args,
             const ImageSequenceRef& image,
-            const u32 lsbLevel,
-            const u32 minCodeLength,
-            const u32 frameCount,
-            const u32 width,
-            const u32 height) {
+            const vector<PixelBGRA>& markImage,
+            const uint32_t markWidth,
+            const uint32_t markHeight,
+            const uint32_t lsbLevel,
+            const uint32_t minCodeLength,
+            const uint32_t frameCount,
+            const uint32_t width,
+            const uint32_t height) {
     DitherMode ditherMode = getDitherMode(args.disableDither, frameCount, args.grayscale);
     if (args.enableLocalPalette) {
-        auto quantResultsRef = quant(image, args, args.numColors, ditherMode, frameCount, width, height);
+        auto quantResultsRef = quant(image, args, markImage, markWidth, markHeight, args.numColors, ditherMode, frameCount, width, height);
         for (auto& res : *quantResultsRef) {
             if (res.isValid) {
                 fillPalette(res.palette, lsbLevel, minCodeLength);
@@ -196,17 +204,17 @@ genPalettes(GetPaletteFunc& getPalette,
                                      ": " + res.errorMessage);
             }
         }
-        getPalette = [quantResultsRef](u32 frameIndex) -> const vector<PixelBGRA>* {
+        getPalette = [quantResultsRef](uint32_t frameIndex) -> const vector<PixelBGRA>* {
             auto& res = (*quantResultsRef)[frameIndex];
             return res.isValid ? &res.palette : nullptr;
         };
-        getIndices = [quantResultsRef](u32 frameIndex) -> const vector<u8>* {
+        getIndices = [quantResultsRef](uint32_t frameIndex) -> const vector<uint8_t>* {
             auto& res = (*quantResultsRef)[frameIndex];
             return res.isValid ? &res.indices : nullptr;
         };
     } else {
         // generate local palettes
-        auto quantResultsRef = quant(image, args, 255, ditherMode, frameCount, width, height);
+        auto quantResultsRef = quant(image, args, markImage, markWidth, markHeight, 255, ditherMode, frameCount, width, height);
         // generate global palette
         GeneralLogger::info("Generating global palette...", GeneralLogger::STEP);
         vector<PixelBGRA> combined;
@@ -238,12 +246,12 @@ genPalettes(GetPaletteFunc& getPalette,
         fillPalette(globalResult.palette, lsbLevel, minCodeLength);
         const auto globalPaletteRef = std::make_shared<vector<PixelBGRA>>(std::move(globalResult.palette));
 
-        getPalette = [globalPaletteRef](u32 _) -> const vector<PixelBGRA>* {
+        getPalette = [globalPaletteRef](uint32_t _) -> const vector<PixelBGRA>* {
             return globalPaletteRef.get();
         };
         // transform local palettes to global palette indices
-        u32 combinedIdx = 0;
-        for (u32 fIdx = 0; fIdx < frameCount; ++fIdx) {
+        uint32_t combinedIdx = 0;
+        for (uint32_t fIdx = 0; fIdx < frameCount; ++fIdx) {
             if ((*quantResultsRef)[fIdx].palette.size() != 255) {
                 continue;
             }
@@ -257,7 +265,7 @@ genPalettes(GetPaletteFunc& getPalette,
             }
             combinedIdx += 255;
         }
-        getIndices = [quantResultsRef](u32 frameIndex) -> const vector<u8>* {
+        getIndices = [quantResultsRef](uint32_t frameIndex) -> const vector<uint8_t>* {
             auto& res = (*quantResultsRef)[frameIndex];
             return res.palette.size() != 255 ? nullptr : &res.indices;
         };
@@ -281,7 +289,7 @@ class FileReaderException final : public std::exception {
 
 class FileReader {
   public:
-    FileReader(const string& filePath, const u32 lsbLevel) : m_bitsPerPixel(lsbLevel * 3), m_buffer(READ_CHUNK_SIZE) {
+    FileReader(const string& filePath, const uint32_t lsbLevel) : m_bitsPerPixel(lsbLevel * 3), m_buffer(READ_CHUNK_SIZE) {
         m_fileName = getFileName(filePath);
         m_filePath = std::filesystem::path(localizePath(filePath));
         if (!std::filesystem::exists(m_filePath)) {
@@ -313,7 +321,7 @@ class FileReader {
         }
     }
 
-    [[nodiscard]] u32
+    [[nodiscard]] uint32_t
     popBits() {
         while (m_byteBufferSize < m_bitsPerPixel) {
             if (m_bufferPos >= m_bufferSize) {
@@ -325,13 +333,13 @@ class FileReader {
             m_byteBufferSize += 8;
         }
         if (m_byteBufferSize < m_bitsPerPixel) {
-            u32 result       = m_byteBuffer << (m_bitsPerPixel - m_byteBufferSize);
+            uint32_t result  = m_byteBuffer << (m_bitsPerPixel - m_byteBufferSize);
             m_byteBufferSize = 0;
             m_byteBuffer     = 0;
             return result;
         }
         m_byteBufferSize -= m_bitsPerPixel;
-        u32 result = m_byteBuffer >> m_byteBufferSize;
+        uint32_t result = m_byteBuffer >> m_byteBufferSize;
         m_byteBuffer &= (1u << m_byteBufferSize) - 1u;
         return result;
     }
@@ -360,7 +368,7 @@ class FileReader {
   private:
     void
     setHeader() {
-        vector<u8> header;
+        vector<uint8_t> header;
         const string fileSize = std::to_string(m_fileSize);
         header.insert(header.end(), fileSize.begin(), fileSize.end());
         header.push_back(1);
@@ -410,7 +418,7 @@ class FileReader {
         return m_bufferSize > 0;
     }
 
-    u32 m_bitsPerPixel = 0;
+    uint32_t m_bitsPerPixel = 0;
 
     std::filesystem::path m_filePath;
     string m_fileName;
@@ -419,12 +427,12 @@ class FileReader {
     size_t m_headerSize = 0;
     size_t m_chunksRead = 0;
 
-    vector<u8> m_buffer;
+    vector<uint8_t> m_buffer;
     size_t m_bufferSize = 0;
     size_t m_bufferPos  = 0;
 
-    u32 m_byteBuffer     = 0;
-    u32 m_byteBufferSize = 0;
+    uint32_t m_byteBuffer     = 0;
+    uint32_t m_byteBufferSize = 0;
 
     bool m_isHeader = true;
 };
@@ -443,23 +451,46 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
         GeneralLogger::info("Transparent threshold: " + std::to_string(args.transparentThreshold), GeneralLogger::STEP);
     }
 
+    vector<PixelBGRA> markImage;
+    if (args.markText == markIdentifier) {
+        GeneralLogger::info("Loading mark image...");
+        markImage = ImageSequence::parseBase64(markBase64);
+        if (markImage.size() != GIFLsb::markWidth * GIFLsb::markHeight) {
+            GeneralLogger::error("Invalid mark image size: " + std::to_string(markImage.size()));
+            markImage.clear();
+        }
+    }
+
     GeneralLogger::info("Reading image...");
     auto image = ImageSequence::read(args.imageFile);
     if (!image) {
         return false;
     }
-    const u32 frameCount                 = image->getFrameCount();
+    const uint32_t frameCount            = image->getFrameCount();
     const auto delays                    = image->getDelays();
-    const u32 width                      = image->getWidth();
-    const u32 height                     = image->getHeight();
+    const uint32_t width                 = image->getWidth();
+    const uint32_t height                = image->getHeight();
     const auto [lsbLevel, minCodeLength] = getLsbLevelAndMinCodeLength(args.numColors);
+
+    uint32_t markWidth = 0, markHeight = 0;
+    if (!markImage.empty()) {
+        markHeight = height * args.markRatio;
+        markWidth  = static_cast<double>(markHeight) * GIFLsb::markWidth / GIFLsb::markHeight;
+
+        markImage = ImageSequence::resizeCover(
+            markImage,
+            GIFLsb::markWidth,
+            GIFLsb::markHeight,
+            markWidth,
+            markHeight);
+    }
 
     GeneralLogger::info("Quantifying image...");
 
     GetPaletteFunc getPalette = nullptr;
     GetIndicesFunc getIndices = nullptr;
 
-    if (!genPalettes(getPalette, getIndices, args, image, lsbLevel, minCodeLength, frameCount, width, height)) {
+    if (!genPalettes(getPalette, getIndices, args, image, markImage, markWidth, markHeight, lsbLevel, minCodeLength, frameCount, width, height)) {
         return false;
     }
 
@@ -482,17 +513,17 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
                            args.enableLocalPalette ? vector<PixelBGRA>{} : *getPalette(0));
 
         GeneralLogger::info("Generating frames...");
-        u32 frameIndex      = 0;
-        u32 generatedFrames = 0;
-        bool isFirstPixel   = true;
-        vector<u8> frameResultBuffer(width * height);
+        uint32_t frameIndex      = 0;
+        uint32_t generatedFrames = 0;
+        bool isFirstPixel        = true;
+        vector<uint8_t> frameResultBuffer(width * height);
         double lastProgress = 0.0;
         while (true) {
             const auto indices = getIndices(frameIndex);
             if (const auto palette = getPalette(frameIndex); indices && palette) {
                 auto bufferIt = frameResultBuffer.begin();
                 for (const auto index : *indices) {
-                    u8 res;
+                    uint8_t res;
                     if (isFirstPixel) {
                         res          = (1 << minCodeLength) - 2;
                         isFirstPixel = false;
@@ -502,7 +533,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
                         const auto bits = fileReader.popBits();
                         res             = args.numColors * bits + index;
                         // const auto& color       = (*palette)[res];
-                        // const u32 bitsFromColor = (color.b & 1) | ((color.g & 1) << 1) | ((color.r & 1) << 2);
+                        // const uint32_t bitsFromColor = (color.b & 1) | ((color.g & 1) << 1) | ((color.r & 1) << 2);
                         // if (bits != bitsFromColor) {
                         //     GeneralLogger::error("Error: bits mismatch: " + std::to_string(bits) +
                         //                          " != " + std::to_string(bitsFromColor));
@@ -519,7 +550,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
                     //         palette->at(res).r,
                     //         palette->at(res).a);
                 }
-                encoder.addFrame({frameResultBuffer.data(), frameResultBuffer.size()},
+                encoder.addFrame(frameResultBuffer,
                                  delays[frameIndex],
                                  args.transparency ? 3 : 1,
                                  minCodeLength,

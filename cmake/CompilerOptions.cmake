@@ -14,7 +14,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
         set(TARGET_COMPILE_OPTIONS ${TARGET_COMPILE_OPTIONS} -O3)
 
         # static linking
-        set(TARGET_LINK_OPTIONS ${TARGET_LINK_OPTIONS} -static-libgcc -static-libstdc++)
+        # set(TARGET_LINK_OPTIONS ${TARGET_LINK_OPTIONS} -static-libgcc -static-libstdc++)
 
         # strip
         set(TARGET_LINK_OPTIONS ${TARGET_LINK_OPTIONS} -Wl,--strip-all)

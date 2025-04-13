@@ -11,7 +11,7 @@ static std::mutex logMutex;
 
 static constexpr const char* colorInfoMsg[]{"\033[32m", "\033[0m", "\033[0m"};
 
-enum LogIndent : u32 {
+enum LogIndent : uint32_t {
     GENERAL = 0,
     STEP    = 1,
     DETAIL  = 2,
@@ -29,7 +29,7 @@ info(const std::string_view& msg, const LogIndent indent = GENERAL, const bool c
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[92m" : "") << "[INFO] ";
-    for (u32 i = 0; i < indent; i++) *logStream << "  ";
+    for (uint32_t i = 0; i < indent; i++) *logStream << "  ";
     *logStream << colorInfoMsg[indent] << msg << (color ? "\033[0m\n" : "\n");
 }
 
@@ -40,7 +40,7 @@ warning(const std::string_view& msg, const LogIndent indent = GENERAL, const boo
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[93m" : "") << "[WARN] ";
-    for (u32 i = 0; i < indent; i++) *logStream << "  ";
+    for (uint32_t i = 0; i < indent; i++) *logStream << "  ";
     *logStream << (color ? "\033[33m" : "") << msg << (color ? "\033[0m\n" : "\n");
 }
 
@@ -51,7 +51,7 @@ error(const std::string_view& msg, const LogIndent indent = GENERAL, const bool 
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[91m" : "") << "[ERROR] ";
-    for (u32 i = 0; i < indent; i++) *logStream << "  ";
+    for (uint32_t i = 0; i < indent; i++) *logStream << "  ";
     *logStream << (color ? "\033[31m" : "") << msg << (color ? "\033[0m\n" : "\n");
 }
 };  // namespace GeneralLogger

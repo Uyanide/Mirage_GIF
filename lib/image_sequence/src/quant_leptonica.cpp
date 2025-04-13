@@ -18,6 +18,7 @@ class QuantizerException : public std::exception {
 
   public:
     explicit QuantizerException(const string&& msg) : message(msg) {}
+
     [[nodiscard]] const char*
     what() const noexcept override {
         return message.c_str();
@@ -25,10 +26,10 @@ class QuantizerException : public std::exception {
 };
 
 static vector<PixelBGRA>
-shrinkPalette(const vector<PixelBGRA>& palette, vector<u8>& indices, u32 colorCount, u32 targetColorCount) noexcept {
+shrinkPalette(const vector<PixelBGRA>& palette, vector<uint8_t>& indices, uint32_t colorCount, uint32_t targetColorCount) noexcept {
     // find the top $targetColorCount used colors in the palette
-    std::vector<std::pair<u32, u32>> count(colorCount);
-    for (u32 i = 0; i < colorCount; i++) {
+    std::vector<std::pair<uint32_t, uint32_t>> count(colorCount);
+    for (uint32_t i = 0; i < colorCount; i++) {
         count[i] = {i, 0};
     }
     for (const auto& index : indices) {
@@ -36,14 +37,14 @@ shrinkPalette(const vector<PixelBGRA>& palette, vector<u8>& indices, u32 colorCo
     }
     std::ranges::sort(count, [](const auto& a, const auto& b) { return a.second > b.second; });
     // map the most used colors to the first $targetColorCount indices
-    std::vector<u8> mapReplace(colorCount);
+    std::vector<uint8_t> mapReplace(colorCount);
     for (auto it = count.begin(); it != count.begin() + targetColorCount; ++it) {
-        mapReplace[it->first] = static_cast<u8>(it - count.begin());
+        mapReplace[it->first] = static_cast<uint8_t>(it - count.begin());
     }
     for (auto it = count.begin() + targetColorCount; it != count.end(); ++it) {
         // find the closest color in the palette
         double minDist = -1;
-        u8 minIdx      = 0;
+        uint8_t minIdx = 0;
         // mostly not the bottleneck, so rough calculations of distance is acceptable
         for (auto prev = count.begin(); prev < it; ++prev) {
             if (const double dist = colorDistance(palette[prev->first], palette[it->first]);
@@ -59,7 +60,7 @@ shrinkPalette(const vector<PixelBGRA>& palette, vector<u8>& indices, u32 colorCo
     std::ranges::for_each(indices, [&mapReplace](auto& index) { index = mapReplace[index]; });
     // generate the new palette
     vector<PixelBGRA> newPalette(targetColorCount);
-    for (u32 i = 0; i < targetColorCount; i++) {
+    for (uint32_t i = 0; i < targetColorCount; i++) {
         newPalette[i] = palette[count[i].first];
     }
     return newPalette;
@@ -70,18 +71,18 @@ static void
 orderedDithering(const vector<PixelBGRA>& pixelsAdjusted,
                  const vector<PixelBGRA>& sortedPalette,
                  const vector<PixelBGRA>& sortedPaletteGray,
-                 vector<u8>& indices,
-                 const u32 width,
-                 const u32 height,
-                 const u32 colorCount) noexcept {
+                 vector<uint8_t>& indices,
+                 const uint32_t width,
+                 const uint32_t height,
+                 const uint32_t colorCount) noexcept {
     static constexpr double BayerMat[4][4] = {{0 / 16., 8 / 16., 2 / 16., 10 / 16.},
                                               {12 / 16., 4 / 16., 14 / 16., 6 / 16.},
                                               {3 / 16., 11 / 16., 1 / 16., 9 / 16.},
                                               {15 / 16., 7 / 16., 13 / 16., 5 / 16.}};
 
-    for (u32 y = 0, idx = 0; y < height; y++) {
-        for (u32 x = 0; x < width; x++, idx++) {
-            const u8 index = indices[idx];
+    for (uint32_t y = 0, idx = 0; y < height; y++) {
+        for (uint32_t x = 0; x < width; x++, idx++) {
+            const uint8_t index = indices[idx];
             // skip transparent pixels
             if (!pixelsAdjusted[idx].a) {
                 continue;
@@ -89,12 +90,12 @@ orderedDithering(const vector<PixelBGRA>& pixelsAdjusted,
             // exactly the same color
             if (pixelsAdjusted[idx] == sortedPalette[index]) continue;
             // compare in GrayScale
-            const u32 grayPalette = sortedPaletteGray[index].r;
+            const uint32_t grayPalette = sortedPaletteGray[index].r;
             // brighter
-            if (const u32 grayOrig = pixelsAdjusted[idx].r; grayPalette > grayOrig) {
+            if (const uint32_t grayOrig = pixelsAdjusted[idx].r; grayPalette > grayOrig) {
                 // already the darkest
                 if (index == 0) continue;
-                const u32 grayPrev = sortedPaletteGray[index - 1].r;
+                const uint32_t grayPrev = sortedPaletteGray[index - 1].r;
                 if (const double ratio = static_cast<double>(grayOrig - grayPrev) / (grayPalette - grayPrev);
                     ratio < BayerMat[y % 4][x % 4]) {
                     indices[idx] = index - 1;
@@ -106,7 +107,7 @@ orderedDithering(const vector<PixelBGRA>& pixelsAdjusted,
             else {
                 // already the brightest
                 if (index == colorCount - 1) continue;
-                const u32 grayNext = sortedPaletteGray[index + 1].r;
+                const uint32_t grayNext = sortedPaletteGray[index + 1].r;
                 if (const double ratio = static_cast<double>(grayOrig - grayPalette) / (grayNext - grayPalette);
                     ratio >= BayerMat[y % 4][x % 4]) {
                     indices[idx] = index + 1;
@@ -120,13 +121,13 @@ orderedDithering(const vector<PixelBGRA>& pixelsAdjusted,
 
 GIFImage::QuantizerResult
 GIFImage::quantize(const span<PixelBGRA>& pixels,
-                   u32 width,
-                   u32 height,
-                   u32 numColors,
+                   uint32_t width,
+                   uint32_t height,
+                   uint32_t numColors,
                    DitherMode ditherMode,
                    bool grayScale,
                    bool transparency,
-                   u8 transparentThreshold,
+                   uint8_t transparentThreshold,
                    bool downsample) noexcept {
     try {
         // parameter validation
@@ -151,15 +152,15 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
             throw QuantizerException("Failed to create PIX object");
         }
         vector<PixelBGRA> pixelsAdjusted(pixels.size());
-        u32* data             = pixGetData(pixs);
+        uint32_t* data        = pixGetData(pixs);
         int32_t wpl           = pixGetWpl(pixs);
         bool isAllTransparent = true;
-        for (u32 y = 0, idx = 0; y < height; y++) {
+        for (uint32_t y = 0, idx = 0; y < height; y++) {
             if (!data) {
                 throw QuantizerException("Failed to get data from PIX object");
             }
-            u32* line = data + y * wpl;
-            for (u32 x = 0; x < width; x++, idx++) {
+            uint32_t* line = data + y * wpl;
+            for (uint32_t x = 0; x < width; x++, idx++) {
                 const auto& pixel = grayScale ? toGray(pixels[idx]) : pixels[idx];
                 PixelBGRA argb;
                 if (transparency && pixel.a <= transparentThreshold) {
@@ -169,8 +170,8 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
                     argb             = preMultiply(pixel);
                 }
                 pixelsAdjusted[idx] = argb;
-                line[x]             = (static_cast<u32>(argb.r) << 24) | (static_cast<u32>(argb.g) << 16) |
-                          (static_cast<u32>(argb.b) << 8) | 255;
+                line[x]             = (static_cast<uint32_t>(argb.r) << 24) | (static_cast<uint32_t>(argb.g) << 16) |
+                          (static_cast<uint32_t>(argb.b) << 8) | 255;
             }
         }
 
@@ -201,10 +202,10 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
         const auto colorCount = pixcmapGetCount(cmap);
         vector<PixelBGRA> palette(colorCount);
         vector<PixelBGRA> paletteGray(colorCount);  // for sorting
-        for (u32 i = 0; i < colorCount; i++) {
+        for (uint32_t i = 0; i < colorCount; i++) {
             l_int32 r, g, b;
             pixcmapGetColor(cmap, i, &r, &g, &b);
-            palette[i]     = makeBGRA(static_cast<u8>(b), static_cast<u8>(g), static_cast<u8>(r), 0xFFu);
+            palette[i]     = makeBGRA(static_cast<uint8_t>(b), static_cast<uint8_t>(g), static_cast<uint8_t>(r), 0xFFu);
             paletteGray[i] = toGray(palette[i]);
             if (grayScale) {
                 palette[i] = paletteGray[i];
@@ -212,14 +213,14 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
         }
 
         // Sort palette and create new indices if needed
-        vector<u8> newIdx(colorCount);
+        vector<uint8_t> newIdx(colorCount);
         vector<PixelBGRA> sortedPalette(colorCount);
         vector<PixelBGRA> sortedPaletteGray(colorCount);
         if (ditherMode == DitherOrdered) {
-            vector<u8> sortedIdx(colorCount);
+            vector<uint8_t> sortedIdx(colorCount);
             std::iota(sortedIdx.begin(), sortedIdx.end(), 0);
-            std::ranges::sort(sortedIdx, [&paletteGray](u8 a, u8 b) { return paletteGray[a].r < paletteGray[b].r; });
-            for (u32 i = 0; i < colorCount; i++) {
+            std::ranges::sort(sortedIdx, [&paletteGray](uint8_t a, uint8_t b) { return paletteGray[a].r < paletteGray[b].r; });
+            for (uint32_t i = 0; i < colorCount; i++) {
                 newIdx[sortedIdx[i]] = i;
                 sortedPalette[i]     = palette[sortedIdx[i]];
                 sortedPaletteGray[i] = paletteGray[sortedIdx[i]];
@@ -231,17 +232,17 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
         }
 
         // Get indices, the indices will be converted to fit the sorted palette
-        vector<u8> indices(width * height);
+        vector<uint8_t> indices(width * height);
         bool warned = false;
         data        = pixGetData(pixd);
         wpl         = pixGetWpl(pixd);
-        for (u32 y = 0, idx = 0; y < height; y++) {
+        for (uint32_t y = 0, idx = 0; y < height; y++) {
             if (!data) {
                 throw QuantizerException("Failed to get data from quantized PIX object");
             }
-            u32* line = data + y * wpl;
-            for (u32 x = 0; x < width; x++, idx++) {
-                u8 byte = GET_DATA_BYTE(line, x);
+            uint32_t* line = data + y * wpl;
+            for (uint32_t x = 0; x < width; x++, idx++) {
+                uint8_t byte = GET_DATA_BYTE(line, x);
                 if (byte >= colorCount) {
                     byte = colorCount - 1;
                     if (!warned) {
@@ -281,7 +282,7 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
 
         // Set the transparency index, if needed
         if (transparency) {
-            for (u32 i = 0; i < indices.size(); i++) {
+            for (uint32_t i = 0; i < indices.size(); i++) {
                 if (!pixelsAdjusted[i].a) {
                     indices[i] = numColors;
                 }
@@ -321,11 +322,11 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
 }
 
 std::optional<PixelBGRA>
-GIFImage::findUnusedColor(const span<PixelBGRA>& pixels, const u32 step) noexcept {
+GIFImage::findUnusedColor(const span<PixelBGRA>& pixels, const uint32_t step) noexcept {
     std::unordered_set<PixelBGRA, PixelBRAGHash> usedColors{pixels.begin(), pixels.end()};
-    for (u32 r = 0; r < 256; r += step) {
-        for (u32 g = 0; g < 256; g += step) {
-            for (u32 b = 0; b < 256; b += step) {
+    for (uint32_t r = 0; r < 256; r += step) {
+        for (uint32_t g = 0; g < 256; g += step) {
+            for (uint32_t b = 0; b < 256; b += step) {
                 PixelBGRA color = makeBGRA(b, g, r, 255);
                 if (usedColors.find(color) == usedColors.end()) {
                     return color;

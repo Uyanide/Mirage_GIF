@@ -2,22 +2,24 @@
 
 #include "cxxopts.hpp"
 #include "log.h"
+#include "mark.h"
 #include "options.h"
 
 using namespace GIFLsb;
 using std::string;
 
-static constexpr u32 DEFAULT_THREADS = 4;
+static constexpr uint32_t DEFAULT_THREADS = 4;
 
-static u32
+static uint32_t
 getThreadCount() {
-    u32 threadCount = std::thread::hardware_concurrency();
+    uint32_t threadCount = std::thread::hardware_concurrency();
     return threadCount == 0 ? 1 : (threadCount > DEFAULT_THREADS ? DEFAULT_THREADS : threadCount);
 }
 
 class OptionInvalidException final : public std::exception {
   public:
     explicit OptionInvalidException(const std::string&& msg) : msg(msg) {}
+
     [[nodiscard]] const char*
     what() const noexcept override {
         return msg.c_str();
@@ -41,12 +43,12 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         //
         ("m,mark_text",
          "Marker text to be embedded in the GIF. Set to \"none\" to disable",
-         cxxopts::value<string>()->default_value(Defaults::MARK_TEXT))
+         cxxopts::value<string>()->default_value(markIdentifier))
         //
         ("c,colors",
          "Number of colors in the generated GIF (" + std::to_string(Limits::MIN_NUM_COLORS) + "-" +
              std::to_string(Limits::MAX_NUM_COLORS) + ").",
-         cxxopts::value<u32>()->default_value(std::to_string(Defaults::NUM_COLORS)))
+         cxxopts::value<uint32_t>()->default_value(std::to_string(Defaults::NUM_COLORS)))
         //
         ("g,grayscale", "Use grayscale palette.")
         //
@@ -58,11 +60,11 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         //
         ("a,threshold",
          "Transparency threshold (0-255), pixels with a alpha value below this will be set transparent.",
-         cxxopts::value<u32>()->default_value(std::to_string(Defaults::TRANSPARENT_THRESHOLD)))
+         cxxopts::value<uint32_t>()->default_value(std::to_string(Defaults::TRANSPARENT_THRESHOLD)))
         //
         ("p,threads",
          "Number of threads to use for processing, 0 means auto-detect.",
-         cxxopts::value<u32>()->default_value(std::to_string(Defaults::THREAD_COUNT)))
+         cxxopts::value<uint32_t>()->default_value(std::to_string(Defaults::THREAD_COUNT)))
         //
         ("h,help", "Show help message");
 
@@ -90,9 +92,9 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         gifOptions.transparency         = result.count("transparency");
         gifOptions.grayscale            = result.count("grayscale");
         gifOptions.enableLocalPalette   = result.count("local_palette");
-        gifOptions.numColors            = result["colors"].as<u32>();
-        gifOptions.transparentThreshold = result["threshold"].as<u32>();
-        gifOptions.threadCount          = result["threads"].as<u32>();
+        gifOptions.numColors            = result["colors"].as<uint32_t>();
+        gifOptions.transparentThreshold = result["threshold"].as<uint32_t>();
+        gifOptions.threadCount          = result["threads"].as<uint32_t>();
 
         if (gifOptions.threadCount == 0) {
             gifOptions.threadCount = getThreadCount();

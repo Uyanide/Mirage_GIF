@@ -11,7 +11,7 @@
 #endif  // _WIN32
 
 #include "gif_lsb.h"
-#include "imsq.h"
+#include "imsq_stream.h"
 #include "log.h"
 #include "options.h"
 
@@ -21,7 +21,7 @@ main(int argc, char** argv) {
     if (!options) {
         return 1;
     }
-    if (!GIFImage::ImageSequence::initDecoder(argv[0])) {
+    if (!GIFImage::ImageSequenceStream::initDecoder(argv[0])) {
         return 1;
     }
     if (!GIFLsb::gifLsbDecode(*options)) {
@@ -58,7 +58,7 @@ GeneralLogger::initLogStream() noexcept {
 #pragma message("Mocking command line arguments.")
 #endif
 
-#define ARGC 3
+#define ARGC 6
 #define ARGLEN 255
 
 char**
@@ -67,7 +67,10 @@ mockCommandLine() {
     char args[ARGC][ARGLEN] = {
         "only useful when initializing Magick++",
         "../../images/encrypted.gif",
-        "../../images/decrypted",
+        "-o",
+        "decrypted",
+        "-d",
+        "../../images",
     };
     GeneralLogger::warning("Mocking command line arguments.");
     for (int i = 0; i < ARGC; ++i) {

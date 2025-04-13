@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "gif_lsb.h"
-#include "imsq.h"
+#include "imsq_stream.h"
 #include "log.h"
 #include "path.h"
 
@@ -13,10 +13,10 @@ using namespace GIFImage;
 using namespace GIFLsb;
 using std::string, std::vector;
 
-static constexpr u32 WRITE_BUFFER_SIZE = 1 << 18;  // 256 KiB
-static constexpr double PROGRESS_STEP  = 0.0314;   // 3.14%
+static constexpr uint32_t WRITE_BUFFER_SIZE = 1 << 24;  // 16 MiB
+static constexpr double PROGRESS_STEP       = 0.0314;   // 3.14%
 
-using PopByteFunc = std::function<u8()>;
+using PopByteFunc = std::function<uint8_t()>;
 
 struct HeaderData {
     const size_t fileSize;
@@ -29,6 +29,7 @@ class EOFException final : public std::exception {};
 class DecodingException final : public std::exception {
   public:
     explicit DecodingException(const string&& message) : msg(message) {}
+
     [[nodiscard]] const char*
     what() const noexcept override {
         return msg.c_str();
@@ -38,22 +39,22 @@ class DecodingException final : public std::exception {
     string msg;
 };
 
-static u32
+static uint32_t
 getLsbLevel(const PixelBGRA& pixel) {
     if ((pixel.r & 7) != 0 || (pixel.g & 7) != 3) return 0;
     return pixel.b & 7;
 }
 
-static u32
-toBits(const PixelBGRA& pixel, const u32 lsbLevel, const u32 mask) {
-    return ((static_cast<u32>(pixel.b) & mask) | ((static_cast<u32>(pixel.g) & mask) << lsbLevel) |
-            ((static_cast<u32>(pixel.r) & mask) << (2 * lsbLevel)));
+static uint32_t
+toBits(const PixelBGRA& pixel, const uint32_t lsbLevel, const uint32_t mask) {
+    return ((static_cast<uint32_t>(pixel.b) & mask) | ((static_cast<uint32_t>(pixel.g) & mask) << lsbLevel) |
+            ((static_cast<uint32_t>(pixel.r) & mask) << (2 * lsbLevel)));
 }
 
 static HeaderData
 decodeHeader(const PopByteFunc& func) {
     size_t fileSize = 0;
-    u8 byte;
+    uint8_t byte;
     while (true) {
         byte = func();
         if (byte == 1 || byte == 0) break;
@@ -88,61 +89,59 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
     GeneralLogger::info("Starting LSB decoding...");
     GeneralLogger::info("Input file: " + args.decyptImage, GeneralLogger::STEP);
 
-    const auto image = ImageSequence::read(args.decyptImage);
+    const auto image = ImageSequenceStream::read(args.decyptImage);
     if (!image) {
         GeneralLogger::error("Failed to read image: " + args.decyptImage);
         return false;
     }
 
     try {
-        u32 frameCount          = image->getFrameCount();
-        u32 frameIndex          = 0;
-        vector<PixelBGRA> frame = image->getFrameBuffer(0, 0, 0, true);
-        u32 byteBuffer          = 0;
-        u32 byteBufferSize      = 0;
-        while (frame.empty()) {
-            if (++frameIndex >= frameCount) {
+        auto frame              = image->getNextFrame();
+        uint32_t byteBuffer     = 0;
+        uint32_t byteBufferSize = 0;
+        while (!frame) {
+            if (image->isEndOfStream()) {
                 GeneralLogger::error("No valid frames found in image.");
                 return false;
             }
-            frame = image->getFrameBuffer(frameIndex, 0, 0, true);
+            frame = image->getNextFrame();
         }
-        auto pixelItr = frame.begin();
+        auto pixelItr = frame->buffer.begin();
 
         GeneralLogger::info("Parsing header...");
-        const u32 lsbLevel = getLsbLevel(*pixelItr++);
+        const uint32_t lsbLevel = getLsbLevel(*pixelItr++);
         if (lsbLevel == 0 || lsbLevel > 7) {
             GeneralLogger::error("Invalid LSB encryption format");
             return false;
         }
         GeneralLogger::info("LSB level: " + std::to_string(lsbLevel), GeneralLogger::STEP);
-        const u32 mask = (1u << lsbLevel) - 1u;
+        const uint32_t mask = (1u << lsbLevel) - 1u;
 
         const PopByteFunc popByte =
-            [&image, &pixelItr, &frame, &frameIndex, frameCount, &byteBuffer, &byteBufferSize, lsbLevel, mask]() -> u8 {
+            [&image, &pixelItr, &frame, &byteBuffer, &byteBufferSize, lsbLevel, mask]() -> uint8_t {
             while (byteBufferSize < 8) {
-                while (pixelItr == frame.end()) {
-                    if (++frameIndex >= frameCount) {
+                if (pixelItr == frame->buffer.end()) {
+                    do {
+                        frame = image->getNextFrame();
+                    } while (!frame && !image->isEndOfStream());
+                    if (!frame) {
                         throw EOFException();
                     }
-                    frame    = image->getFrameBuffer(frameIndex, 0, 0, true);
-                    pixelItr = frame.begin();
+                    pixelItr = frame->buffer.begin();
                 }
+                // skip transparent pixels
+                // (incompatible with traditional LSB)
                 if (pixelItr->a == 0) {
                     ++pixelItr;
                     continue;
                 }
                 byteBuffer <<= lsbLevel * 3;
                 byteBufferSize += lsbLevel * 3;
-
-                // static FILE* tmp = fopen("tmp-dec.txt", "w");
-                // fprintf(tmp, "%02hhx%02hhx%02hhx%02hhx\n", pixelItr->b, pixelItr->g, pixelItr->r, pixelItr->a);
-
                 byteBuffer |= toBits(*pixelItr++, lsbLevel, mask);
             }
             byteBufferSize -= 8;
-            u32 ret    = byteBuffer & (0xffu << byteBufferSize);
-            byteBuffer = byteBuffer & ((1 << byteBufferSize) - 1);
+            uint32_t ret = byteBuffer & (0xffu << byteBufferSize);
+            byteBuffer   = byteBuffer & ((1 << byteBufferSize) - 1);
             return ret >> byteBufferSize;
         };
 
@@ -170,12 +169,12 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
         }
         outFile.exceptions(std::ios::failbit | std::ios::badbit);
 
-        vector<u8> buffer(WRITE_BUFFER_SIZE);
+        vector<uint8_t> buffer(WRITE_BUFFER_SIZE);
         size_t bufferPos    = 0;
         size_t wroteSize    = 0;
         double lastProgress = 0.0;
         for (size_t i = 0; i < headerData.fileSize; ++i) {
-            const u8 byte       = popByte();
+            const uint8_t byte  = popByte();
             buffer[bufferPos++] = byte;
             if (bufferPos >= WRITE_BUFFER_SIZE) {
                 outFile.write(reinterpret_cast<const char*>(buffer.data()), bufferPos);

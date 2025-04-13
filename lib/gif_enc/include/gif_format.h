@@ -7,33 +7,33 @@
 #include "def.h"
 
 namespace GIFEnc {
-constexpr u8 GIF_COLOR_RES      = 8;  // color resolution
-constexpr u8 GIF_DISPOSE_METHOD = 3;  // dispose method
-constexpr u8 GIF_END            = 0x3B;
+constexpr uint8_t GIF_COLOR_RES      = 8;  // color resolution
+constexpr uint8_t GIF_DISPOSE_METHOD = 3;  // dispose method
+constexpr uint8_t GIF_END            = 0x3B;
 
-std::vector<u8>
-gifHeader(u32 width,
-          u32 height,
-          u32 backgroundIndex,
-          u32 minCodeLength,
-          u32 loops,
+std::vector<uint8_t>
+gifHeader(uint32_t width,
+          uint32_t height,
+          uint32_t backgroundIndex,
+          uint32_t minCodeLength,
+          uint32_t loops,
           const bool hasGlobalColorTable,
           const std::vector<PixelBGRA> &globalColorTable = {}) noexcept;
 
-std::vector<u8>
-gifFrameHeader(u32 width,
-               u32 height,
-               u32 delay,
+std::vector<uint8_t>
+gifFrameHeader(uint32_t width,
+               uint32_t height,
+               uint32_t delay,
                bool hasTransparency,
-               u32 transparentIndex,
-               u32 disposalMethod,
-               u32 minCodeLength,
+               uint32_t transparentIndex,
+               uint32_t disposalMethod,
+               uint32_t minCodeLength,
                const std::vector<PixelBGRA> &palette = {}) noexcept;
 
-std::vector<u8>
+std::vector<uint8_t>
 gifApplicationExtension(const std::string &identifier,
                         const std::string &authentication,
-                        const std::vector<u8> &data) noexcept;
+                        const std::vector<uint8_t> &data) noexcept;
 };  // namespace GIFEnc
 
 #endif  // GIF_FORMAT_H

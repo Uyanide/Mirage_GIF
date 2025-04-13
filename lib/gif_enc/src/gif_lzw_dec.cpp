@@ -5,24 +5,26 @@
 using std::vector, std::span;
 
 class LZWDecompressImpl {
-    static constexpr u16 NONE_CODE = 0xFFFFu;
-    struct LZWNode {           // data: prefix + final byte
-        u32 len  = 0;          // length of data
-        u16 prev = NONE_CODE;  // index of prefix
-        u8 data  = 0;          // final byte
+    static constexpr uint16_t NONE_CODE = 0xFFFFu;
+
+    struct LZWNode {                // data: prefix + final byte
+        uint32_t len  = 0;          // length of data
+        uint16_t prev = NONE_CODE;  // index of prefix
+        uint8_t data  = 0;          // final byte
     };
 
   public:
     LZWDecompressImpl(const GIFEnc::LZW::WriteCallback& write,
                       const GIFEnc::LZW::ErrorCallback& onError,
-                      u32 minCodeSize,
+                      uint32_t minCodeSize,
                       size_t writeChunkSize);
     ~LZWDecompressImpl();
 
     void
-    process(const span<u8>& data);
+    process(const span<uint8_t>& data);
     size_t
     finish();
+
     [[nodiscard]] bool
     finished() const {
         return m_finished;
@@ -31,40 +33,40 @@ class LZWDecompressImpl {
   private:
     void
     _reset();
-    u16
-    _insertDict(u16 prev, u8 data);
-    u8
-    _writeCode(u16 code);
+    uint16_t
+    _insertDict(uint16_t prev, uint8_t data);
+    uint8_t
+    _writeCode(uint16_t code);
     void
-    _appendResult(u8 data);
+    _appendResult(uint8_t data);
     void
     _flushResult(size_t maxSize);
     void
     _onError();
 
-    vector<u8> m_result;
+    vector<uint8_t> m_result;
     size_t m_resultTotalSize = 0;
     const size_t m_writeChunkSize;
     const GIFEnc::LZW::WriteCallback& m_write;
     const GIFEnc::LZW::ErrorCallback& m_onError;
 
-    u32 m_buffer = 0, m_bufferSize = 0;
+    uint32_t m_buffer = 0, m_bufferSize = 0;
 
     vector<LZWNode> m_dict;
-    u32 m_dictSize = 0;
+    uint32_t m_dictSize = 0;
 
-    const u32 m_minCodeSize;
-    u32 m_currCodeSize = 0;
-    const u16 m_cleanCode, m_endCode;
+    const uint32_t m_minCodeSize;
+    uint32_t m_currCodeSize = 0;
+    const uint16_t m_cleanCode, m_endCode;
 
-    u16 m_prevCode = NONE_CODE;
+    uint16_t m_prevCode = NONE_CODE;
 
     bool m_finished = false;
 };
 
 LZWDecompressImpl::LZWDecompressImpl(const GIFEnc::LZW::WriteCallback& write,
                                      const GIFEnc::LZW::ErrorCallback& onError,
-                                     const u32 minCodeSize,
+                                     const uint32_t minCodeSize,
                                      const size_t writeChunkSize)
     : m_writeChunkSize(writeChunkSize),
       m_write(std::move(write)),
@@ -74,8 +76,8 @@ LZWDecompressImpl::LZWDecompressImpl(const GIFEnc::LZW::WriteCallback& write,
       m_endCode(m_cleanCode + 1) {
     m_dict.resize(GIFEnc::LZW::MAX_DICT_SIZE);
 
-    for (u16 i = 0; i < m_cleanCode; i++) {
-        m_dict[i].data = static_cast<u8>(i);
+    for (uint16_t i = 0; i < m_cleanCode; i++) {
+        m_dict[i].data = static_cast<uint8_t>(i);
         m_dict[i].len  = 1;
     }
     _reset();
@@ -94,12 +96,12 @@ LZWDecompressImpl::_reset() {
 }
 
 void
-LZWDecompressImpl::process(const span<u8>& data) {
+LZWDecompressImpl::process(const span<uint8_t>& data) {
     if (m_finished) {
         return;
     }
     size_t pos   = 0;
-    auto popCode = [this, &data, &pos]() -> i32 {
+    auto popCode = [this, &data, &pos]() -> int32_t {
         while (m_bufferSize < m_currCodeSize) {
             if (pos >= data.size()) {
                 return -1;
@@ -107,17 +109,17 @@ LZWDecompressImpl::process(const span<u8>& data) {
             m_buffer |= data[pos++] << m_bufferSize;
             m_bufferSize += 8;
         }
-        const u16 code = m_buffer & ((1u << m_currCodeSize) - 1u);
+        const uint16_t code = m_buffer & ((1u << m_currCodeSize) - 1u);
         m_buffer >>= m_currCodeSize;
         m_bufferSize -= m_currCodeSize;
         return code;
     };
-    i32 code = popCode();
-    if (m_result.empty() && code == static_cast<i32>(m_cleanCode)) {
+    int32_t code = popCode();
+    if (m_result.empty() && code == static_cast<int32_t>(m_cleanCode)) {
         code = popCode();
     }
     while (code != -1 && !m_finished) {
-        if (const u16 codeU = static_cast<u16>(code); codeU == m_cleanCode) {
+        if (const uint16_t codeU = static_cast<uint16_t>(code); codeU == m_cleanCode) {
             _reset();
         } else if (codeU == m_endCode) {
             m_finished = true;
@@ -128,11 +130,11 @@ LZWDecompressImpl::process(const span<u8>& data) {
                     _onError();
                     return;
                 }
-                u8 newData = _writeCode(m_prevCode);
+                uint8_t newData = _writeCode(m_prevCode);
                 _appendResult(newData);
                 m_prevCode = _insertDict(m_prevCode, newData);
             } else {
-                u8 newData = _writeCode(codeU);
+                uint8_t newData = _writeCode(codeU);
                 if (m_prevCode != NONE_CODE) {
                     if (m_prevCode >= m_dictSize) {
                         _onError();
@@ -157,8 +159,8 @@ LZWDecompressImpl::finish() {
     return m_resultTotalSize;
 }
 
-u16
-LZWDecompressImpl::_insertDict(u16 prev, u8 data) {
+uint16_t
+LZWDecompressImpl::_insertDict(uint16_t prev, uint8_t data) {
     if (m_dictSize >= GIFEnc::LZW::MAX_DICT_SIZE) {
         _onError();
         return NONE_CODE;
@@ -173,10 +175,10 @@ LZWDecompressImpl::_insertDict(u16 prev, u8 data) {
     return m_dictSize - 1;
 }
 
-u8
-LZWDecompressImpl::_writeCode(u16 code) {
+uint8_t
+LZWDecompressImpl::_writeCode(uint16_t code) {
     m_result.resize(m_result.size() + m_dict[code].len);
-    u16 currCode = code, firstCode = code;
+    uint16_t currCode = code, firstCode = code;
     for (auto it = prev(m_result.end()); currCode != NONE_CODE; --it) {
         firstCode        = currCode;
         const auto& data = m_dict[currCode];
@@ -184,9 +186,9 @@ LZWDecompressImpl::_writeCode(u16 code) {
         currCode         = data.prev;
     }
     if (m_result.size() >= m_writeChunkSize) {
-        u8 *const l = m_result.data(), *const r = l + m_result.size(), *pos = l;
+        uint8_t *const l = m_result.data(), *const r = l + m_result.size(), *pos = l;
         for (; r - pos >= 0 && static_cast<size_t>(r - pos) >= m_writeChunkSize; pos += m_writeChunkSize) {
-            m_write(span<u8>(pos, m_writeChunkSize));
+            m_write(span<uint8_t>(pos, m_writeChunkSize));
             m_resultTotalSize += m_writeChunkSize;
         }
         m_result.erase(m_result.begin(), m_result.begin() + (pos - l));
@@ -195,7 +197,7 @@ LZWDecompressImpl::_writeCode(u16 code) {
 }
 
 void
-LZWDecompressImpl::_appendResult(u8 data) {
+LZWDecompressImpl::_appendResult(uint8_t data) {
     m_result.push_back(data);
     _flushResult(m_writeChunkSize);
 };
@@ -203,7 +205,7 @@ LZWDecompressImpl::_appendResult(u8 data) {
 void
 LZWDecompressImpl::_flushResult(size_t maxSize) {
     if (m_result.size() >= maxSize) {
-        m_write(span<u8>(m_result.data(), m_result.size()));
+        m_write(span<uint8_t>(m_result.data(), m_result.size()));
         m_resultTotalSize += m_result.size();
         m_result.clear();
     }
@@ -224,7 +226,7 @@ size_t
 GIFEnc::LZW::decompressStream(const ReadCallback& read,
                               const GIFEnc::LZW::WriteCallback& write,
                               const GIFEnc::LZW::ErrorCallback& onError,
-                              const u32 minCodeSize,
+                              const uint32_t minCodeSize,
                               const size_t writeChunkSize) noexcept {
     if (minCodeSize < 2) {
         return 0;
@@ -241,13 +243,13 @@ GIFEnc::LZW::decompressStream(const ReadCallback& read,
     return decoder.finish();
 }
 
-vector<u8>
-GIFEnc::LZW::decompress(const span<u8>& data, const u32 minCodeSize) noexcept {
+vector<uint8_t>
+GIFEnc::LZW::decompress(const span<uint8_t>& data, const uint32_t minCodeSize) noexcept {
     if (minCodeSize < 2) {
         return {};
     }
-    vector<u8> out;
-    auto decoder = LZWDecompressImpl([&out](const span<u8>& data) { out.insert(out.end(), data.begin(), data.end()); },
+    vector<uint8_t> out;
+    auto decoder = LZWDecompressImpl([&out](const span<uint8_t>& data) { out.insert(out.end(), data.begin(), data.end()); },
                                      [&out]() { out.clear(); },
                                      minCodeSize,
                                      WRITE_DEFAULT_CHUNK_SIZE);

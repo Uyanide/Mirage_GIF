@@ -12,7 +12,7 @@
 using std::vector, std::span, std::string;
 
 static bool
-checkCodeLengthValid(u32 minCodeLength, size_t paletteSize) {
+checkCodeLengthValid(uint32_t minCodeLength, size_t paletteSize) {
     if (minCodeLength < 2 || minCodeLength > 8) {
         return false;
     }
@@ -23,7 +23,7 @@ checkCodeLengthValid(u32 minCodeLength, size_t paletteSize) {
 }
 
 static bool
-checkIndexesValid(const std::span<u8>& codes, u32 minCodeLength, size_t paletteSize) {
+checkIndexesValid(const std::span<uint8_t>& codes, uint32_t minCodeLength, size_t paletteSize) {
     const auto maxIndex = paletteSize - 1;
     for (const auto& code : codes) {
         if (code > maxIndex) {
@@ -34,13 +34,13 @@ checkIndexesValid(const std::span<u8>& codes, u32 minCodeLength, size_t paletteS
 }
 
 GIFEnc::GIFEncoder::GIFEncoder(const string& outPath,
-                               const u32 width,
-                               const u32 height,
-                               const u32 backgroundIndex,
-                               const u32 minCodeLength,
+                               const uint32_t width,
+                               const uint32_t height,
+                               const uint32_t backgroundIndex,
+                               const uint32_t minCodeLength,
                                const bool hasTransparency,
-                               const u32 transparentIndex,
-                               const u32 loops,
+                               const uint32_t transparentIndex,
+                               const uint32_t loops,
                                const bool hasGlobalColorTable,
                                const vector<PixelBGRA>& globalColorTable)
     : m_width(width),
@@ -93,10 +93,10 @@ GIFEnc::GIFEncoder::~GIFEncoder() {
 
 void
 GIFEnc::GIFEncoder::addFrame(
-    const span<u8>& frame,
-    u32 delay,
-    u32 disposalMethod,
-    u32 minCodeLength,
+    const span<uint8_t>& frame,
+    uint32_t delay,
+    uint32_t disposalMethod,
+    uint32_t minCodeLength,
     const std::vector<PixelBGRA>& palette) {
     if (m_finished) {
         return;
@@ -108,7 +108,7 @@ GIFEnc::GIFEncoder::addFrame(
             "empty");
     }
 
-    u32 mcl;
+    uint32_t mcl;
     const std::vector<PixelBGRA>* pal = nullptr;
 
     if (minCodeLength == 0) {
@@ -143,7 +143,7 @@ GIFEnc::GIFEncoder::addFrame(
 
     bool isFirst          = true;
     const auto compressed = GIFEnc::LZW::compressStream(
-        [&frame, &isFirst]() -> span<u8> {
+        [&frame, &isFirst]() -> span<uint8_t> {
             if (isFirst) {
                 isFirst = false;
                 return {frame.data(), frame.size()};
@@ -151,7 +151,7 @@ GIFEnc::GIFEncoder::addFrame(
                 return {};
             }
         },
-        [&buffer](const span<u8>& data) {
+        [&buffer](const span<uint8_t>& data) {
             if (data.empty()) return;
             buffer.push_back(data.size());
             buffer.insert(buffer.end(), data.begin(), data.end());
@@ -169,10 +169,10 @@ GIFEnc::GIFEncoder::addFrame(
 
 void
 GIFEnc::GIFEncoder::addFrameCompressed(
-    const span<u8>& frame,
-    u32 delay,
-    u32 disposalMethod,
-    u32 minCodeLength,
+    const span<uint8_t>& frame,
+    uint32_t delay,
+    uint32_t disposalMethod,
+    uint32_t minCodeLength,
     const std::vector<PixelBGRA>& palette) {
     if (m_finished) {
         return;
@@ -184,7 +184,7 @@ GIFEnc::GIFEncoder::addFrameCompressed(
             "empty");
     }
 
-    u32 mcl;
+    uint32_t mcl;
     const std::vector<PixelBGRA>* pal = nullptr;
 
     if (minCodeLength == 0) {
@@ -227,7 +227,7 @@ GIFEnc::GIFEncoder::addFrameCompressed(
 void
 GIFEnc::GIFEncoder::addApplicationExtension(const string& identifier,
                                             const string& authentication,
-                                            const vector<u8>& data) {
+                                            const vector<uint8_t>& data) {
     if (m_finished) {
         return;
     }
@@ -250,7 +250,7 @@ GIFEnc::GIFEncoder::finish() {
 }
 
 void
-GIFEnc::GIFEncoder::writeFile(const span<u8>& data) {
+GIFEnc::GIFEncoder::writeFile(const span<uint8_t>& data) {
     if (m_finished) return;
     try {
         m_file.write(reinterpret_cast<const char*>(data.data()), data.size());
@@ -263,7 +263,7 @@ GIFEnc::GIFEncoder::writeFile(const span<u8>& data) {
 }
 
 void
-GIFEnc::GIFEncoder::writeFile(u8 byte) {
+GIFEnc::GIFEncoder::writeFile(uint8_t byte) {
     if (m_finished) return;
     try {
         m_file.write(reinterpret_cast<const char*>(&byte), 1);

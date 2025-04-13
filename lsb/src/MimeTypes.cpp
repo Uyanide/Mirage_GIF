@@ -25,7 +25,8 @@
  */
 #include "MimeTypes.h"
 
-const char *MimeTypes::getType(const char *extension) {
+const char *
+MimeTypes::getType(const char *extension) {
     const char *dot = strrchr(extension, '.');
     if (dot) {
         if (dot != extension) {
@@ -39,7 +40,7 @@ const char *MimeTypes::getType(const char *extension) {
     int max = (sizeof(types) / sizeof(*types) - 1);
 
     while (min <= max) {
-        int i = (int)(((max + min) / 2) + 0.5);
+        int i     = (int)(((max + min) / 2) + 0.5);
         int order = strcmpi(extension, types[i].fileExtension);
 
         if (order == 0) {
@@ -54,7 +55,8 @@ const char *MimeTypes::getType(const char *extension) {
     return NULL;
 }
 
-const char *MimeTypes::getExtension(const char *type, int skip) {
+const char *
+MimeTypes::getExtension(const char *type, int skip) {
     int length = (sizeof(types) / sizeof(*types));
 
     for (int i = 0; i < length; i++) {
@@ -69,7 +71,8 @@ const char *MimeTypes::getExtension(const char *type, int skip) {
 }
 
 // https://www.geeksforgeeks.org/write-your-own-strcmp-which-ignores-cases/
-int MimeTypes::strcmpi(const char *s1, const char *s2) {
+int
+MimeTypes::strcmpi(const char *s1, const char *s2) {
     int i;
 
     for (i = 0; s1[i] && s2[i]; ++i) {

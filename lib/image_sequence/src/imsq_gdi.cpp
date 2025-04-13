@@ -1,6 +1,4 @@
-#ifndef _WIN32
-#error "Gdiplus is only available on Windows."
-#endif
+#ifdef IMSQ_USE_GDIPLUS
 
 #include <windows.h>
 //
@@ -13,7 +11,9 @@
 #include <fstream>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
+#include "gdi_initializer.h"
 #include "imsq.h"
 #include "log.h"
 #include "path.h"
@@ -41,35 +41,35 @@ class ImageSequenceImpl : public GIFImage::ImageSequence {
 
     ~ImageSequenceImpl() override;
 
-    std::vector<u32>&
+    [[nodiscard]] const std::vector<uint32_t>&
     getDelays() noexcept override {
         return m_delays;
     }
 
-    [[nodiscard]] u32
+    [[nodiscard]] uint32_t
     getFrameCount() const noexcept override {
-        return static_cast<u32>(m_delays.size());
+        return static_cast<uint32_t>(m_delays.size());
     }
 
-    [[nodiscard]] u32
+    [[nodiscard]] uint32_t
     getWidth() const noexcept override {
         return m_width;
     }
 
-    [[nodiscard]] u32
+    [[nodiscard]] uint32_t
     getHeight() const noexcept override {
         return m_height;
     }
 
     std::vector<PixelBGRA>
-    getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept override;
+    getFrameBuffer(uint32_t index, uint32_t width, uint32_t height) noexcept override;
 
   private:
     Gdiplus::Image* m_image                = nullptr;
     Gdiplus::PropertyItem* m_delayPropItem = nullptr;
-    std::vector<u32> m_delays;
-    u32 m_width  = 0;
-    u32 m_height = 0;
+    std::vector<uint32_t> m_delays;
+    uint32_t m_width  = 0;
+    uint32_t m_height = 0;
     std::mutex m_imageMutex;
 };
 
@@ -78,33 +78,37 @@ class ImageSequenceWebpImpl : public GIFImage::ImageSequence {
     explicit ImageSequenceWebpImpl(const std::string& filename);
     ~ImageSequenceWebpImpl() override;
 
-    std::vector<u32>&
+    [[nodiscard]] const std::vector<uint32_t>&
     getDelays() noexcept override {
         return m_delays;
     }
-    [[nodiscard]] u32
+
+    [[nodiscard]] uint32_t
     getFrameCount() const noexcept override {
         return m_frameCount;
     }
-    [[nodiscard]] u32
+
+    [[nodiscard]] uint32_t
     getWidth() const noexcept override {
         return m_width;
     }
-    [[nodiscard]] u32
+
+    [[nodiscard]] uint32_t
     getHeight() const noexcept override {
         return m_height;
     }
+
     std::vector<PixelBGRA>
-    getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept override;
+    getFrameBuffer(uint32_t index, uint32_t width, uint32_t height) noexcept override;
 
   private:
     WebPData m_webpData{};
     WebPDemuxer* m_demux = nullptr;
     WebPDecoderConfig m_config{};
-    std::vector<u32> m_delays;
-    u32 m_frameCount = 0;
-    u32 m_width      = 0;
-    u32 m_height     = 0;
+    std::vector<uint32_t> m_delays;
+    uint32_t m_frameCount = 0;
+    uint32_t m_width      = 0;
+    uint32_t m_height     = 0;
     std::mutex m_demuxMutex;
 };
 
@@ -119,7 +123,7 @@ GIFImage::ImageSequence::read(const std::string& filename) noexcept {
         } else {
             return std::make_unique<ImageSequenceImpl>(filename);
         }
-    } catch (const ImageParseException& e) {
+    } catch (const std::exception& e) {
         GeneralLogger::error("Error reading image sequence: " + string(e.what()));
         return nullptr;
     }
@@ -152,7 +156,7 @@ ReadFileToWebPData(const std::string& filename, WebPData* webp_data) {
     const size_t fileSize = file.tellg();
     file.seekg(0, std::ios::beg);
 
-    u8* data = new u8[fileSize];
+    uint8_t* data = new uint8_t[fileSize];
     if (!file.read(reinterpret_cast<char*>(data), fileSize)) {
         delete[] data;
         return false;
@@ -201,7 +205,7 @@ ImageSequenceWebpImpl::ImageSequenceWebpImpl(const std::string& filename) {
         m_delays.resize(m_frameCount);
         WebPIterator iter;
         if (WebPDemuxGetFrame(m_demux, 1, &iter)) {
-            u32 frame_index = 0;
+            uint32_t frame_index = 0;
             do {
                 m_delays[frame_index] = iter.duration;
                 if (m_delays[frame_index] == 0) {
@@ -212,11 +216,11 @@ ImageSequenceWebpImpl::ImageSequenceWebpImpl(const std::string& filename) {
             WebPDemuxReleaseIterator(&iter);
         } else {
             GeneralLogger::warning("Failed to get WebP frame iterator: " + filename);
-            for (u32 i = 0; i < m_frameCount; ++i) {
+            for (uint32_t i = 0; i < m_frameCount; ++i) {
                 m_delays[i] = GIFImage::ImageSequence::DEFAULT_DELAY;
             }
         }
-    } catch (const ImageParseException& _) {
+    } catch (const std::exception& _) {
         throw;
     } catch (...) {
         throw ImageParseException("Failed to parse WebP image: " + filename);
@@ -237,7 +241,7 @@ ImageSequenceWebpImpl::~ImageSequenceWebpImpl() {
 }
 
 std::vector<PixelBGRA>
-ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept {
+ImageSequenceWebpImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t height) noexcept {
     try {
         if (index >= m_frameCount) {
             index %= m_frameCount;
@@ -253,7 +257,7 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
             if (!WebPDemuxGetFrame(m_demux, index + 1, &iter)) {
                 throw ImageParseException("Failed to get WebP frame at index: " + std::to_string(index));
             }
-            const u32 srcWidth = iter.width, srcHeight = iter.height;
+            const uint32_t srcWidth = iter.width, srcHeight = iter.height;
             if (srcWidth != m_width || srcHeight != m_height) {
                 GeneralLogger::warning("WebP frame dimensions do not match: " + std::to_string(srcWidth) + "x" +
                                        std::to_string(srcHeight) + " != " + std::to_string(m_width) + "x" +
@@ -266,7 +270,7 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
 
             std::vector<PixelBGRA> tempBuffer(srcWidth * srcHeight);
 
-            m_config.output.u.RGBA.rgba   = reinterpret_cast<u8*>(tempBuffer.data());
+            m_config.output.u.RGBA.rgba   = reinterpret_cast<uint8_t*>(tempBuffer.data());
             m_config.output.u.RGBA.stride = srcWidth * 4;
             m_config.output.u.RGBA.size   = tempBuffer.size() * 4;
             m_config.output.width         = srcWidth;
@@ -279,7 +283,7 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
                 throw ImageParseException("Failed to decode WebP frame, status: " + std::to_string(status));
             }
 
-            if (ensureAccurate || (width == srcWidth && height == srcHeight)) {
+            if (width == srcWidth && height == srcHeight) {
                 return tempBuffer;
             } else {
                 double targetAspect = static_cast<double>(width) / height;
@@ -307,7 +311,7 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
                     srcHeight,
                     srcWidth * 4,
                     PixelFormat32bppARGB,
-                    reinterpret_cast<u8*>(tempBuffer.data()));
+                    reinterpret_cast<uint8_t*>(tempBuffer.data()));
                 Gdiplus::Bitmap bitmap(width, height, PixelFormat32bppARGB);
 
                 Gdiplus::Graphics graphics(&bitmap);
@@ -333,17 +337,17 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
                     throw ImageParseException("Failed to lock bitmap for pixel extraction.");
                 }
 
-                u8* src = static_cast<u8*>(bitmapData.Scan0);
+                uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
                 std::vector<PixelBGRA> pixelData(width * height);
 
-                for (u32 y = 0; y < height; ++y) {
+                for (uint32_t y = 0; y < height; ++y) {
                     memcpy(&pixelData[y * width], src + y * bitmapData.Stride, width * 4);
                 }
                 bitmap.UnlockBits(&bitmapData);
                 return pixelData;
             }
         }
-    } catch (const ImageParseException& e) {
+    } catch (const std::exception& e) {
         GeneralLogger::error("Error getting WebP frame buffer: " + string(e.what()));
         return {};
     } catch (...) {
@@ -351,38 +355,6 @@ ImageSequenceWebpImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ens
         return {};
     }
 }
-
-class GdiPlusInitializer {
-  private:
-    ULONG_PTR token  = 0;
-    bool initialized = false;
-
-  public:
-    GdiPlusInitializer() = default;
-
-    bool
-    initialize() {
-        if (initialized) return true;
-        if (token != 0) return false;
-        Gdiplus::GdiplusStartupInput input;
-        Gdiplus::Status status = Gdiplus::GdiplusStartup(&token, &input, nullptr);
-        initialized            = (status == Gdiplus::Ok);
-        return initialized;
-    }
-
-    ~GdiPlusInitializer() {
-        if (initialized) {
-            Gdiplus::GdiplusShutdown(token);
-        }
-    }
-
-    [[nodiscard]] bool
-    isInitialized() const {
-        return initialized;
-    }
-};
-
-static GdiPlusInitializer gdiPlusInitializer;
 
 wstring
 toWstring(const std::string& str) {
@@ -410,7 +382,7 @@ ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
             throw ImageParseException("Failed to load image: " + filename);
         }
 
-        u32 frameCount = m_image->GetFrameCount(&Gdiplus::FrameDimensionTime);
+        uint32_t frameCount = m_image->GetFrameCount(&Gdiplus::FrameDimensionTime);
         if (frameCount == 0 || frameCount == 1) {
             GeneralLogger::warning("Image has no frames or only one frame: " + filename);
             frameCount = 1;  // Default to 1 frame if no frames are found
@@ -426,14 +398,14 @@ ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
         GeneralLogger::info("Image dimensions: " + std::to_string(m_width) + "x" + std::to_string(m_height),
                             GeneralLogger::DETAIL);
 
-        m_delayPropItem    = nullptr;
-        const u32 propSize = m_image->GetPropertyItemSize(PropertyTagFrameDelay);
+        m_delayPropItem         = nullptr;
+        const uint32_t propSize = m_image->GetPropertyItemSize(PropertyTagFrameDelay);
         if (propSize > 0) {
             m_delayPropItem = static_cast<Gdiplus::PropertyItem*>(malloc(propSize));
             m_image->GetPropertyItem(PropertyTagFrameDelay, propSize, m_delayPropItem);
         }
 
-        for (u32 i = 0; i < frameCount; ++i) {
+        for (uint32_t i = 0; i < frameCount; ++i) {
             auto status = m_image->SelectActiveFrame(&Gdiplus::FrameDimensionTime, i);
             if (status != Gdiplus::Ok) {
                 throw ImageParseException("Failed to select frame: " + filename);
@@ -442,12 +414,12 @@ ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
                 throw ImageParseException("Frame dimensions not consistent: " + filename);
             }
             if (m_delayPropItem != nullptr) {
-                m_delays[i] = (static_cast<u32*>(m_delayPropItem->value))[i] * 10;
+                m_delays[i] = (static_cast<uint32_t*>(m_delayPropItem->value))[i] * 10;
             } else {
                 m_delays[i] = GIFImage::ImageSequence::DEFAULT_DELAY;
             }
         }
-    } catch (const ImageParseException& _) {
+    } catch (const std::exception& _) {
         throw;
     } catch (...) {
         throw ImageParseException("Failed to parse image: " + filename);
@@ -462,7 +434,7 @@ ImageSequenceImpl::~ImageSequenceImpl() {
 }
 
 std::vector<PixelBGRA>
-ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureAccurate) noexcept {
+ImageSequenceImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t height) noexcept {
     Gdiplus::Bitmap* bitmap = nullptr;
     try {
         if (index >= m_delays.size()) {
@@ -491,7 +463,7 @@ ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureA
                                        std::to_string(m_height));
             }
 
-            if (!ensureAccurate) {
+            if (width != srcWidth || height != srcHeight) {
                 double targetAspect = static_cast<double>(width) / height;
                 double imageAspect  = static_cast<double>(srcWidth) / srcHeight;
 
@@ -549,15 +521,15 @@ ImageSequenceImpl::getFrameBuffer(u32 index, u32 width, u32 height, bool ensureA
         }
 
         std::vector<PixelBGRA> pixelData(width * height);
-        u8* src = static_cast<u8*>(bitmapData.Scan0);
-        for (u32 y = 0; y < height; ++y) {
+        uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
+        for (uint32_t y = 0; y < height; ++y) {
             memcpy(&pixelData[y * width], src + y * bitmapData.Stride, width * 4);
         }
 
         bitmap->UnlockBits(&bitmapData);
         delete bitmap;
         return pixelData;
-    } catch (const ImageParseException& e) {
+    } catch (const std::exception& e) {
         GeneralLogger::error("Error getting frame buffer: " + string(e.what()));
         delete bitmap;
         return {};
@@ -574,17 +546,20 @@ GIFImage::ImageSequence::initDecoder(const char*) noexcept {
 }
 
 bool
-GIFImage::ImageSequence::drawText(std::span<PixelBGRA>& buffer,
-                                  u32 width,
-                                  u32 height,
+GIFImage::ImageSequence::drawText(vector<PixelBGRA>& buffer,
+                                  const uint32_t width,
+                                  const uint32_t height,
                                   const string& text,
                                   const PixelBGRA& textBackgroundColor,
                                   const PixelBGRA& textForegroundColor,
-                                  float textHeightRatio,
-                                  float textPadding,
+                                  const double textHeightRatio,
+                                  const double textPadding,
+                                  const uint32_t x,
+                                  const uint32_t y,
                                   const string& fontFamilyPara) noexcept {
     try {
-        if (buffer.empty() || width == 0 || height == 0) {
+        if (text.empty()) return true;  // do nothing
+        if (buffer.empty() || width == 0 || height == 0 || x >= width || y >= height) {
             throw ImageParseException("Invalid buffer or dimensions for drawing text.");
         }
         if (buffer.size() != width * height) {
@@ -607,10 +582,12 @@ GIFImage::ImageSequence::drawText(std::span<PixelBGRA>& buffer,
                             textForegroundColor,
                             textHeightRatio,
                             textPadding,
+                            x,
+                            y,
                             FALLBACK_FONT);
         }
 
-        u8* bgraBuffer = reinterpret_cast<u8*>(buffer.data());
+        uint8_t* bgraBuffer = reinterpret_cast<uint8_t*>(buffer.data());
         Gdiplus::Bitmap bitmap(width, height, width * 4, PixelFormat32bppARGB, bgraBuffer);
         auto status = bitmap.GetLastStatus();
         if (status != Gdiplus::Ok) {
@@ -629,25 +606,25 @@ GIFImage::ImageSequence::drawText(std::span<PixelBGRA>& buffer,
         graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHighQuality);
         graphics.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
 
-        u32 textBoxHeight = static_cast<u32>(height * textHeightRatio);
+        uint32_t textBoxHeight = static_cast<uint32_t>(height * textHeightRatio);
         Gdiplus::Font font(&fontFamily,
                            static_cast<float>(textBoxHeight) * (1 - textPadding * 2),
                            Gdiplus::FontStyleRegular,
                            Gdiplus::UnitPixel);
         Gdiplus::SolidBrush textBrush(
             Gdiplus::Color(textForegroundColor.a, textForegroundColor.r, textForegroundColor.g, textForegroundColor.b));
-        Gdiplus::PointF point(static_cast<float>(textBoxHeight) * textPadding,
-                              static_cast<float>(textBoxHeight) * textPadding);
+        Gdiplus::PointF point(x + static_cast<float>(textBoxHeight) * textPadding,
+                              y + static_cast<float>(textBoxHeight) * textPadding);
 
         // Measure the size of the text
         Gdiplus::RectF textBounds;
         graphics.MeasureString(toWstring(text).c_str(), -1, &font, point, &textBounds);
 
         // Create a background rectangle that matches the text bounds
-        Gdiplus::RectF backgroundRect(0,
-                                      0,
-                                      textBounds.Width + (textBoxHeight * textPadding * 2),
-                                      textBounds.Height + (textBoxHeight * textPadding * 2));
+        Gdiplus::RectF backgroundRect(x,
+                                      y,
+                                      x + textBounds.Width + (textBoxHeight * textPadding * 2),
+                                      y + textBounds.Height + (textBoxHeight * textPadding * 2));
         Gdiplus::SolidBrush backgroundBrush(
             Gdiplus::Color(textBackgroundColor.a, textBackgroundColor.r, textBackgroundColor.g, textBackgroundColor.b));
         graphics.FillRectangle(&backgroundBrush, backgroundRect);
@@ -674,3 +651,333 @@ GIFImage::ImageSequence::drawText(std::span<PixelBGRA>& buffer,
         return false;
     }
 }
+
+vector<PixelBGRA>
+GIFImage::ImageSequence::resizeCover(const vector<PixelBGRA>& buffer,
+                                     const uint32_t origWidth,
+                                     const uint32_t origHeight,
+                                     const uint32_t targetWidth,
+                                     const uint32_t targetHeight) noexcept {
+    try {
+        if (buffer.empty() || origWidth == 0 || origHeight == 0 || targetWidth == 0 || targetHeight == 0) {
+            throw ImageParseException("Invalid buffer or dimensions for resizing.");
+        }
+        if (buffer.size() != origWidth * origHeight) {
+            throw ImageParseException("Buffer size does not match original dimensions: " +
+                                      std::to_string(buffer.size()) + " != " + std::to_string(origWidth * origHeight));
+        }
+        if (targetWidth == origWidth && targetHeight == origHeight) {
+            return vector(buffer);  // No resizing needed
+        }
+
+        double targetAspect = static_cast<double>(targetWidth) / targetHeight;
+        double imageAspect  = static_cast<double>(origWidth) / origHeight;
+
+        Gdiplus::RectF srcRect;
+        if (targetAspect > imageAspect) {
+            float newHeight = static_cast<float>(origWidth) / targetAspect;
+            srcRect         = Gdiplus::RectF(0, (origHeight - newHeight) / 2, static_cast<float>(origWidth), newHeight);
+        } else {
+            float newWidth = static_cast<float>(origHeight) * targetAspect;
+            srcRect        = Gdiplus::RectF((origWidth - newWidth) / 2, 0, newWidth, static_cast<float>(origHeight));
+        }
+
+        auto bitmap = Gdiplus::Bitmap(targetWidth, targetHeight, PixelFormat32bppARGB);
+        Gdiplus::Graphics graphics(&bitmap);
+
+        graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+        graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHighQuality);
+        graphics.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
+        graphics.Clear(Gdiplus::Color(0, 0, 0, 0));
+
+        Gdiplus::RectF destRect(0, 0, static_cast<float>(targetWidth), static_cast<float>(targetHeight));
+        Gdiplus::Bitmap srcBitmap(origWidth, origHeight, origWidth * 4, PixelFormat32bppARGB, reinterpret_cast<uint8_t*>(const_cast<PixelBGRA*>(buffer.data())));
+        graphics.DrawImage(
+            &srcBitmap,
+            destRect,
+            srcRect.X,
+            srcRect.Y,
+            srcRect.Width,
+            srcRect.Height,
+            Gdiplus::UnitPixel);
+        if (graphics.GetLastStatus() != Gdiplus::Ok) {
+            throw ImageParseException("Failed to draw image. Error code: " +
+                                      std::to_string(graphics.GetLastStatus()));
+        }
+        Gdiplus::BitmapData bitmapData;
+        Gdiplus::Rect lockRect(0, 0, targetWidth, targetHeight);
+        if (bitmap.LockBits(&lockRect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData) != Gdiplus::Ok) {
+            throw ImageParseException("Failed to lock bitmap for pixel extraction.");
+        }
+        std::vector<PixelBGRA> pixelData(targetWidth * targetHeight);
+        uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
+        for (uint32_t y = 0; y < targetHeight; ++y) {
+            memcpy(&pixelData[y * targetWidth], src + y * bitmapData.Stride, targetWidth * 4);
+        }
+        bitmap.UnlockBits(&bitmapData);
+        return pixelData;
+    } catch (const std::exception& e) {
+        GeneralLogger::error("Error resizing image: " + string(e.what()));
+        return {};
+    } catch (...) {
+        GeneralLogger::error("Unknown error resizing image.");
+        return {};
+    }
+    return {};
+}
+
+bool
+GIFImage::ImageSequence::drawMark(vector<PixelBGRA>& buffer,
+                                  const uint32_t width,
+                                  const uint32_t height,
+                                  const vector<PixelBGRA> markBuffer,
+                                  const uint32_t markWidth,
+                                  const uint32_t markHeight,
+                                  const uint32_t x,
+                                  const uint32_t y) noexcept {
+    try {
+        if (width == 0 || height == 0 || markWidth == 0 || markHeight == 0) {
+            throw ImageParseException("Invalid dimensions for drawing mark.");
+        }
+        if (buffer.size() != width * height) {
+            throw ImageParseException("Buffer size does not match dimensions: " + std::to_string(buffer.size()) +
+                                      " != " + std::to_string(width * height));
+        }
+        if (markBuffer.size() != markWidth * markHeight) {
+            throw ImageParseException("Mark buffer size does not match dimensions: " +
+                                      std::to_string(markBuffer.size()) + " != " +
+                                      std::to_string(markWidth * markHeight));
+        }
+        if (x >= width || y >= height) {
+            throw ImageParseException("Invalid x or y coordinates for drawing mark.");
+        }
+
+        for (uint32_t i = y; i < y + markHeight && i < height; ++i) {
+            for (uint32_t j = x; j < x + markWidth && j < width; ++j) {
+                auto& buff         = buffer[i * width + j];
+                const auto& mark   = markBuffer[(i - y) * markWidth + (j - x)];
+                const double alpha = mark.a / 255.0;
+
+                buff.r = TOU8(mark.r * alpha + buff.r * (1 - alpha));
+                buff.g = TOU8(mark.g * alpha + buff.g * (1 - alpha));
+                buff.b = TOU8(mark.b * alpha + buff.b * (1 - alpha));
+                buff.a = TOU8(mark.a + buff.a * (1 - alpha));
+            }
+        }
+        return true;
+    } catch (const std::exception& e) {
+        GeneralLogger::error("Error drawing mark: " + string(e.what()));
+    } catch (...) {
+        GeneralLogger::error("Unknown error drawing mark.");
+    }
+    return false;
+}
+
+static uint32_t
+base64DecodeChar(char ch) {
+    // if (ch >= 'a') return (ch - 'a' + 26);
+    // if (ch >= 'A') return (ch - 'A');
+    // if (ch >= '0') return (ch - '0' + 52);
+    // if (ch == '+') return 62;
+    // if (ch == '/') return 63;
+    // return 0;
+    static const std::unordered_map<char, uint32_t> charMap{
+        {'A', 0},
+        {'B', 1},
+        {'C', 2},
+        {'D', 3},
+        {'E', 4},
+        {'F', 5},
+        {'G', 6},
+        {'H', 7},
+        {'I', 8},
+        {'J', 9},
+        {'K', 10},
+        {'L', 11},
+        {'M', 12},
+        {'N', 13},
+        {'O', 14},
+        {'P', 15},
+        {'Q', 16},
+        {'R', 17},
+        {'S', 18},
+        {'T', 19},
+        {'U', 20},
+        {'V', 21},
+        {'W', 22},
+        {'X', 23},
+        {'Y', 24},
+        {'Z', 25},
+        {'a', 26},
+        {'b', 27},
+        {'c', 28},
+        {'d', 29},
+        {'e', 30},
+        {'f', 31},
+        {'g', 32},
+        {'h', 33},
+        {'i', 34},
+        {'j', 35},
+        {'k', 36},
+        {'l', 37},
+        {'m', 38},
+        {'n', 39},
+        {'o', 40},
+        {'p', 41},
+        {'q', 42},
+        {'r', 43},
+        {'s', 44},
+        {'t', 45},
+        {'u', 46},
+        {'v', 47},
+        {'w', 48},
+        {'x', 49},
+        {'y', 50},
+        {'z', 51},
+        {'0', 52},
+        {'1', 53},
+        {'2', 54},
+        {'3', 55},
+        {'4', 56},
+        {'5', 57},
+        {'6', 58},
+        {'7', 59},
+        {'8', 60},
+        {'9', 61},
+        {'+', 62},
+        {'/', 63},  // standard base64
+        {'-', 62},
+        {'_', 63},  // URL-safe base64
+        {'=', 0},
+        {' ', 0},
+        {'\n', 0},
+        {'\r', 0},
+        {'\t', 0}  // padding and whitespace
+    };
+    const auto it = charMap.find(ch);
+    if (it != charMap.end()) {
+        return it->second;
+    } else {
+        throw ImageParseException("Invalid base64 character: " + std::string(1, ch));
+    }
+}
+
+static vector<uint8_t>
+base64Decode(const string& base64) {
+    const auto pos = base64.find("base64,");
+    if (pos == string::npos) {
+        throw ImageParseException("Invalid base64 string: missing 'base64,' prefix.");
+    }
+    const auto stringLen  = base64.size() - pos - 7;
+    const auto base64Data = std::string_view(base64.data() + pos + 7, stringLen);
+    if (stringLen % 4 != 0) {
+        throw ImageParseException("Invalid base64 data length: " + std::to_string(stringLen));
+    }
+    size_t padding = 0;
+    if (base64Data.back() == '=') {
+        if (base64Data[stringLen - 1] == '=') {
+            padding++;
+            if (base64Data[stringLen - 2] == '=') {
+                padding++;
+                if (base64Data[stringLen - 3] == '=') {
+                    throw ImageParseException("Invalid base64 string: too many padding characters.");
+                }
+            }
+        }
+    }
+
+    vector<uint8_t> decodedData;
+    const auto dataLen = (stringLen / 4) * 3 - padding;
+    decodedData.resize(dataLen);
+    for (size_t i = 0, j = 0; i < stringLen; i += 4) {
+        const auto a = base64DecodeChar(base64Data[i]);
+        const auto b = base64DecodeChar(base64Data[i + 1]);
+        const auto c = base64DecodeChar(base64Data[i + 2]);
+        const auto d = base64DecodeChar(base64Data[i + 3]);
+
+        decodedData[j++] = (a << 2) | (b >> 4);
+        if (j < dataLen) decodedData[j++] = ((b & 0x0F) << 4) | (c >> 2);
+        if (j < dataLen) decodedData[j++] = ((c & 0x03) << 6) | d;
+    }
+    return decodedData;
+}
+
+vector<PixelBGRA>
+GIFImage::ImageSequence::parseBase64(const string& base64) noexcept {
+    vector<PixelBGRA> result;
+
+    HGLOBAL hGlobal         = nullptr;
+    IStream* pStream        = nullptr;
+    Gdiplus::Bitmap* bitmap = nullptr;
+
+    const auto defer = [&]() {
+        if (hGlobal) {
+            if (GlobalFlags(hGlobal) & GMEM_LOCKCOUNT) {
+                GlobalUnlock(hGlobal);
+            }
+            GlobalFree(hGlobal);
+        }
+        if (pStream) {
+            pStream->Release();
+        }
+        if (bitmap) {
+            delete bitmap;
+        }
+    };
+
+    try {
+        if (base64.empty()) {
+            throw ImageParseException("Base64 string is empty.");
+        }
+        const auto decodedData = base64Decode(base64);
+        if (decodedData.empty()) {
+            throw ImageParseException("Failed to decode base64 string.");
+        }
+
+        hGlobal = GlobalAlloc(GMEM_MOVEABLE, decodedData.size());
+        if (!hGlobal) {
+            throw ImageParseException("Failed to allocate global memory for base64 data.");
+        }
+
+        void* pData = GlobalLock(hGlobal);
+        if (!pData) {
+            throw ImageParseException("Failed to lock global memory for base64 data.");
+        }
+        memcpy(pData, decodedData.data(), decodedData.size());
+        GlobalUnlock(hGlobal);
+
+        pStream = nullptr;
+        if (CreateStreamOnHGlobal(hGlobal, TRUE, &pStream) != S_OK) {
+            throw ImageParseException("Failed to create stream from global memory.");
+        }
+
+        bitmap = Gdiplus::Bitmap::FromStream(pStream);
+        if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Ok) {
+            throw ImageParseException("Failed to create bitmap from base64 data.");
+        }
+
+        uint32_t width  = bitmap->GetWidth();
+        uint32_t height = bitmap->GetHeight();
+        result.resize(width * height);
+
+        Gdiplus::BitmapData bitmapData;
+        Gdiplus::Rect lockRect(0, 0, width, height);
+        if (bitmap->LockBits(&lockRect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData) != Gdiplus::Ok) {
+            throw ImageParseException("Failed to lock bitmap for pixel extraction.");
+        }
+
+        uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
+        for (uint32_t y = 0; y < height; ++y) {
+            memcpy(&result[y * width], src + y * bitmapData.Stride, width * 4);
+        }
+        bitmap->UnlockBits(&bitmapData);
+    } catch (const std::exception& e) {
+        GeneralLogger::error("Error parsing base64 image: " + string(e.what()));
+    } catch (...) {
+        GeneralLogger::error("Unknown error parsing base64 image.");
+    }
+    defer();
+    return result;
+}
+
+#endif  // IMSQ_USE_GDIPLUS

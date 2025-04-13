@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "def.h"
+
 namespace GIFImage {
 
 enum DitherMode {
@@ -17,11 +18,11 @@ enum DitherMode {
 struct QuantizerResult {
     bool isValid;
     std::vector<PixelBGRA> palette;
-    std::vector<u8> indices;
+    std::vector<uint8_t> indices;
     bool hasTransparency;
-    u32 width;
-    u32 height;
-    u32 transparencyIndex;
+    uint32_t width;
+    uint32_t height;
+    uint32_t transparencyIndex;
     std::string errorMessage;
 };
 
@@ -55,17 +56,17 @@ struct QuantizerResult {
  */
 QuantizerResult
 quantize(const std::span<PixelBGRA>& pixels,
-         u32 width,
-         u32 height,
-         u32 numColors,
-         DitherMode ditherMode   = DitherFloydSteinberg,
-         bool grayScale          = false,
-         bool transparency       = false,
-         u8 transparentThreshold = 0,
-         bool downsample         = true) noexcept;
+         uint32_t width,
+         uint32_t height,
+         uint32_t numColors,
+         DitherMode ditherMode        = DitherFloydSteinberg,
+         bool grayScale               = false,
+         bool transparency            = false,
+         uint8_t transparentThreshold = 0,
+         bool downsample              = true) noexcept;
 
 std::optional<PixelBGRA>
-findUnusedColor(const std::span<PixelBGRA>& pixels, u32 step = 16) noexcept;
+findUnusedColor(const std::span<PixelBGRA>& pixels, uint32_t step = 16) noexcept;
 
 }  // namespace GIFImage
 

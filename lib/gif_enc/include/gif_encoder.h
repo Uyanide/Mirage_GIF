@@ -16,13 +16,13 @@ class GIFEncoder {
     GIFEncoder() { m_finished = true; }
 
     GIFEncoder(const std::string& outPath,
-               u32 width,
-               u32 height,
-               u32 backgroundIndex,
-               u32 minCodeLength,
+               uint32_t width,
+               uint32_t height,
+               uint32_t backgroundIndex,
+               uint32_t minCodeLength,
                bool hasTransparency,
-               u32 transparentIndex,
-               u32 loops,
+               uint32_t transparentIndex,
+               uint32_t loops,
                bool hasGlobalColorTable,
                const std::vector<PixelBGRA>& globalColorTable = {});
 
@@ -37,10 +37,10 @@ class GIFEncoder {
      *                      If empty, the global color table will be used.
      */
     void
-    addFrame(const std::span<u8>& frame,
-             u32 delay,
-             u32 disposalMethod,
-             u32 minCodeLength                     = 0,
+    addFrame(const std::span<uint8_t>& frame,
+             uint32_t delay,
+             uint32_t disposalMethod,
+             uint32_t minCodeLength                = 0,
              const std::vector<PixelBGRA>& palette = {});
 
     /**
@@ -53,10 +53,10 @@ class GIFEncoder {
      *                      If empty, the global color table will be used.
      */
     void
-    addFrameCompressed(const std::span<u8>& frame,
-                       u32 delay,
-                       u32 disposalMethod,
-                       u32 minCodeLength                     = 0,
+    addFrameCompressed(const std::span<uint8_t>& frame,
+                       uint32_t delay,
+                       uint32_t disposalMethod,
+                       uint32_t minCodeLength                = 0,
                        const std::vector<PixelBGRA>& palette = {});
 
     /**
@@ -68,7 +68,7 @@ class GIFEncoder {
     void
     addApplicationExtension(const std::string& identifier,
                             const std::string& authentication,
-                            const std::vector<u8>& data);
+                            const std::vector<uint8_t>& data);
 
     bool
     finish();
@@ -83,19 +83,19 @@ class GIFEncoder {
 
   private:
     void
-    writeFile(const std::span<u8>& data);
+    writeFile(const std::span<uint8_t>& data);
 
     void
-    writeFile(u8 byte);
+    writeFile(uint8_t byte);
 
   private:
     std::ofstream m_file;
     std::filesystem::path m_outPath;
-    u32 m_width            = 0;
-    u32 m_height           = 0;
-    u32 m_minCodeLength    = 0;
-    bool m_hasTransparency = false;
-    u32 m_transparentIndex = 0;
+    uint32_t m_width            = 0;
+    uint32_t m_height           = 0;
+    uint32_t m_minCodeLength    = 0;
+    bool m_hasTransparency      = false;
+    uint32_t m_transparentIndex = 0;
     std::vector<PixelBGRA> m_globalColorTable;
 
     bool m_finished = false;

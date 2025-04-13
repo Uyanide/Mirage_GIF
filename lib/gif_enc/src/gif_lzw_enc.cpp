@@ -5,22 +5,23 @@
 using std::vector, std::span;
 
 class LZWCompressImpl {
-    // static constexpr u32 MAX_DATA = 4;  // 0~3, enough for me :)
-    static constexpr u8 MAX_DATA        = 255;  // but 256 is better for general use
-    static constexpr u32 MAX_CHUNK_SIZE = 255;
-    using LZWNode                       = u16[MAX_DATA + 1];  // index: data; value: pointer to next node
+    // static constexpr uint32_t MAX_DATA = 4;  // 0~3, enough for me :)
+    static constexpr uint8_t MAX_DATA        = 255;  // but 256 is better for general use
+    static constexpr uint32_t MAX_CHUNK_SIZE = 255;
+    using LZWNode                            = uint16_t[MAX_DATA + 1];  // index: data; value: pointer to next node
 
   public:
     LZWCompressImpl(const GIFEnc::LZW::WriteCallback& write,
                     const GIFEnc::LZW::ErrorCallback& onError,
-                    u32 minCodeSize,
+                    uint32_t minCodeSize,
                     size_t writeChunkSize);
     ~LZWCompressImpl();
 
     void
-    process(const span<u8>& input);
+    process(const span<uint8_t>& input);
     size_t
     finish();
+
     [[nodiscard]] bool
     isFinished() const {
         return m_isFinished;
@@ -28,34 +29,34 @@ class LZWCompressImpl {
 
   private:
     void
-    _pushCode(u16 code);
+    _pushCode(uint16_t code);
     void
     _reset();
     void
     _onError();
 
-    vector<u8> m_result;
+    vector<uint8_t> m_result;
     const size_t m_writeChunkSize;
     size_t m_resultSize      = 0;
     size_t m_resultTotalSize = 0;
     const GIFEnc::LZW::WriteCallback& m_write;
     const GIFEnc::LZW::ErrorCallback& m_onError;
-    const u32 m_minCodeSize;  // the code before each LZW chunk
+    const uint32_t m_minCodeSize;  // the code before each LZW chunk
 
-    u16 m_maxCode = 0, m_nextCode = 0;
-    const u16 m_clearCode, m_endCode;
-    u32 m_codeLength = 0;
-    u32 m_buffer = 0, m_bufferSize = 0;  // byte buffer
+    uint16_t m_maxCode = 0, m_nextCode = 0;
+    const uint16_t m_clearCode, m_endCode;
+    uint32_t m_codeLength = 0;
+    uint32_t m_buffer = 0, m_bufferSize = 0;  // byte buffer
 
-    LZWNode* m_dict = nullptr;  // memory pool. index: code + 1; value: node. 0 is reserved for null
-    u16 m_currNode  = 0;        // pointer to current node
+    LZWNode* m_dict     = nullptr;  // memory pool. index: code + 1; value: node. 0 is reserved for null
+    uint16_t m_currNode = 0;        // pointer to current node
 
     bool m_isFinished = false;
 };
 
 LZWCompressImpl::LZWCompressImpl(const GIFEnc::LZW::WriteCallback& write,
                                  const GIFEnc::LZW::ErrorCallback& onError,
-                                 const u32 minCodeSize,
+                                 const uint32_t minCodeSize,
                                  const size_t writeChunkSize)
     : m_writeChunkSize(writeChunkSize),
       m_write(std::move(write)),
@@ -74,12 +75,12 @@ LZWCompressImpl::~LZWCompressImpl() {
 }
 
 void
-LZWCompressImpl::process(const span<u8>& input) {
+LZWCompressImpl::process(const span<uint8_t>& input) {
     if (m_isFinished) {
         return;
     }
     for (size_t i = 0; i < input.size(); ++i) {
-        const u8& data = input[i];
+        const uint8_t& data = input[i];
         if (data >= 1 << m_minCodeSize) {
             _onError();
             return;
@@ -87,7 +88,7 @@ LZWCompressImpl::process(const span<u8>& input) {
         if (!m_currNode) {  // first data
             m_currNode = data + 1;
         } else {
-            if (u16& nextNode = m_dict[m_currNode][data]) {  // next node exists
+            if (uint16_t& nextNode = m_dict[m_currNode][data]) {  // next node exists
                 m_currNode = nextNode;
             } else {
                 _pushCode(m_currNode - 1);
@@ -118,11 +119,11 @@ LZWCompressImpl::finish() {
         _pushCode(m_currNode - 1);
     _pushCode(m_endCode);
     if (m_bufferSize) {
-        m_result[m_resultSize++] = static_cast<u8>(m_buffer);
+        m_result[m_resultSize++] = static_cast<uint8_t>(m_buffer);
     }
 
     if (m_resultSize) {
-        m_write(span<u8>(m_result.data(), m_resultSize));
+        m_write(span<uint8_t>(m_result.data(), m_resultSize));
         m_resultTotalSize += m_resultSize;
         m_resultSize = 0;
     }
@@ -140,16 +141,16 @@ LZWCompressImpl::_reset() {
 }
 
 void
-LZWCompressImpl::_pushCode(u16 code) {
+LZWCompressImpl::_pushCode(uint16_t code) {
     m_buffer |= code << m_bufferSize;
     m_bufferSize += m_codeLength;
     while (m_bufferSize >= 8) {
-        m_result[m_resultSize++] = static_cast<u8>(m_buffer & 0xFF);
+        m_result[m_resultSize++] = static_cast<uint8_t>(m_buffer & 0xFF);
         m_buffer >>= 8;
         m_bufferSize -= 8;
 
         if (m_resultSize >= m_writeChunkSize) {
-            m_write(span<u8>(m_result.data(), m_resultSize));
+            m_write(span<uint8_t>(m_result.data(), m_resultSize));
             m_resultTotalSize += m_resultSize;
             m_resultSize = 0;
         }
@@ -170,7 +171,7 @@ size_t
 GIFEnc::LZW::compressStream(const ReadCallback& read,
                             const GIFEnc::LZW::WriteCallback& write,
                             const GIFEnc::LZW::ErrorCallback& onError,
-                            u32 minCodeSize,
+                            uint32_t minCodeSize,
                             size_t writeChunkSize) noexcept {
     if (minCodeSize < 2) {
         return 0;
@@ -178,7 +179,7 @@ GIFEnc::LZW::compressStream(const ReadCallback& read,
     if (read == nullptr || write == nullptr) {
         return 0;
     }
-    vector<u8> out;
+    vector<uint8_t> out;
     auto encoder = LZWCompressImpl(write, onError, minCodeSize, writeChunkSize);
     while (true) {
         auto data = read();
@@ -188,13 +189,13 @@ GIFEnc::LZW::compressStream(const ReadCallback& read,
     return encoder.finish();
 }
 
-vector<u8>
-GIFEnc::LZW::compress(const span<u8>& data, u32 minCodeSize) noexcept {
+vector<uint8_t>
+GIFEnc::LZW::compress(const span<uint8_t>& data, uint32_t minCodeSize) noexcept {
     if (minCodeSize < 2) {
         return {};
     }
-    vector<u8> out;
-    auto encoder = LZWCompressImpl([&out](const span<u8>& data) { out.insert(out.end(), data.begin(), data.end()); },
+    vector<uint8_t> out;
+    auto encoder = LZWCompressImpl([&out](const span<uint8_t>& data) { out.insert(out.end(), data.begin(), data.end()); },
                                    [&out]() { out.clear(); },
                                    minCodeSize,
                                    GIFEnc::LZW::WRITE_DEFAULT_CHUNK_SIZE);
