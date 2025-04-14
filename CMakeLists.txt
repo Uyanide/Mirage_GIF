@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(GIFHidePic
-    VERSION 1.1.0
+    VERSION 1.1.1
     LANGUAGES CXX
 )
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 
 set(LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
 

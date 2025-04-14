@@ -7,7 +7,9 @@ echo "Building in $build_dir"
 if [[ "$1" == "--configure" ]]; then
     rm -rf $build_dir
     mkdir $build_dir
-    cmake -S $build_dir/.. -B $build_dir
+    cmake -S $build_dir/.. -B $build_dir \
+          -DCMAKE_BUILD_TYPE=Realease \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 fi
 
 cmake --build $build_dir

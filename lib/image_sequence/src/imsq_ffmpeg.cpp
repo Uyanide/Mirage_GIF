@@ -650,7 +650,7 @@ bool
 ImageSequence::drawMark(vector<PixelBGRA>& buffer,
                         const uint32_t width,
                         const uint32_t height,
-                        const vector<PixelBGRA> markBuffer,
+                        const vector<PixelBGRA>& markBuffer,
                         const uint32_t markWidth,
                         const uint32_t markHeight,
                         const uint32_t x,

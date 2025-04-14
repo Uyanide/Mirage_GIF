@@ -38,7 +38,8 @@ if ($args -contains "--configure") {
         "-B",
         "$PSScriptRoot\..\build",
         "-DVCPKG_TARGET_TRIPLET=x64-windows-static",
-        "-DCMAKE_TOOLCHAIN_FILE=C:/Users/cyani/code/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "-DCMAKE_TOOLCHAIN_FILE=C:/Users/cyani/code/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "-DCMAKE_BUILD_TYPE=Release"
     )
     if ($ret -ne 0) {
         exit $ret

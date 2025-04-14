@@ -10,7 +10,6 @@
 #include <filesystem>
 #include <fstream>
 #include <mutex>
-#include <thread>
 #include <unordered_map>
 
 #include "gdi_initializer.h"
@@ -156,7 +155,7 @@ ReadFileToWebPData(const std::string& filename, WebPData* webp_data) {
     const size_t fileSize = file.tellg();
     file.seekg(0, std::ios::beg);
 
-    uint8_t* data = new uint8_t[fileSize];
+    auto* data = new uint8_t[fileSize];
     if (!file.read(reinterpret_cast<char*>(data), fileSize)) {
         delete[] data;
         return false;
@@ -337,7 +336,7 @@ ImageSequenceWebpImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t h
                     throw ImageParseException("Failed to lock bitmap for pixel extraction.");
                 }
 
-                uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
+                auto* src = static_cast<uint8_t*>(bitmapData.Scan0);
                 std::vector<PixelBGRA> pixelData(width * height);
 
                 for (uint32_t y = 0; y < height; ++y) {
@@ -521,7 +520,7 @@ ImageSequenceImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t heigh
         }
 
         std::vector<PixelBGRA> pixelData(width * height);
-        uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
+        const auto* src = static_cast<uint8_t*>(bitmapData.Scan0);
         for (uint32_t y = 0; y < height; ++y) {
             memcpy(&pixelData[y * width], src + y * bitmapData.Stride, width * 4);
         }
@@ -567,7 +566,7 @@ GIFImage::ImageSequence::drawText(vector<PixelBGRA>& buffer,
                                       " != " + std::to_string(width * height));
         }
 
-        Gdiplus::FontFamily fontFamily(toWstring(fontFamilyPara.c_str()).c_str());
+        Gdiplus::FontFamily fontFamily(toWstring(fontFamilyPara).c_str());
         if (fontFamily.GetLastStatus() != Gdiplus::Ok) {
             if (fontFamilyPara == FALLBACK_FONT) {
                 throw ImageParseException("Failed to create font.");
@@ -587,34 +586,32 @@ GIFImage::ImageSequence::drawText(vector<PixelBGRA>& buffer,
                             FALLBACK_FONT);
         }
 
-        uint8_t* bgraBuffer = reinterpret_cast<uint8_t*>(buffer.data());
+        auto* bgraBuffer = reinterpret_cast<uint8_t*>(buffer.data());
         Gdiplus::Bitmap bitmap(width, height, width * 4, PixelFormat32bppARGB, bgraBuffer);
         auto status = bitmap.GetLastStatus();
         if (status != Gdiplus::Ok) {
             throw ImageParseException("Failed to read from pixel buffer. Error code: " + std::to_string(status));
-            return false;
         }
 
         Gdiplus::Graphics graphics(&bitmap);
         if (graphics.GetLastStatus() != Gdiplus::Ok) {
             throw ImageParseException("Failed to create canvas. Error code: " +
                                       std::to_string(graphics.GetLastStatus()));
-            return false;
         }
 
         graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
         graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHighQuality);
         graphics.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
 
-        uint32_t textBoxHeight = static_cast<uint32_t>(height * textHeightRatio);
+        const auto textBoxHeight = static_cast<uint32_t>(height * textHeightRatio);
         Gdiplus::Font font(&fontFamily,
                            static_cast<float>(textBoxHeight) * (1 - textPadding * 2),
                            Gdiplus::FontStyleRegular,
                            Gdiplus::UnitPixel);
-        Gdiplus::SolidBrush textBrush(
+        const Gdiplus::SolidBrush textBrush(
             Gdiplus::Color(textForegroundColor.a, textForegroundColor.r, textForegroundColor.g, textForegroundColor.b));
-        Gdiplus::PointF point(x + static_cast<float>(textBoxHeight) * textPadding,
-                              y + static_cast<float>(textBoxHeight) * textPadding);
+        const Gdiplus::PointF point(x + static_cast<float>(textBoxHeight) * textPadding,
+                                    y + static_cast<float>(textBoxHeight) * textPadding);
 
         // Measure the size of the text
         Gdiplus::RectF textBounds;
@@ -631,7 +628,6 @@ GIFImage::ImageSequence::drawText(vector<PixelBGRA>& buffer,
         if (graphics.GetLastStatus() != Gdiplus::Ok) {
             throw ImageParseException("Failed to fill background rectangle. Error code: " +
                                       std::to_string(graphics.GetLastStatus()));
-            return false;
         }
 
         // Draw the text
@@ -639,7 +635,6 @@ GIFImage::ImageSequence::drawText(vector<PixelBGRA>& buffer,
         Gdiplus::Status drawStatus = graphics.GetLastStatus();
         if (drawStatus != Gdiplus::Ok) {
             throw ImageParseException("Failed to draw text. Error code: " + std::to_string(drawStatus));
-            return false;
         }
 
         return true;
@@ -667,7 +662,7 @@ GIFImage::ImageSequence::resizeCover(const vector<PixelBGRA>& buffer,
                                       std::to_string(buffer.size()) + " != " + std::to_string(origWidth * origHeight));
         }
         if (targetWidth == origWidth && targetHeight == origHeight) {
-            return vector(buffer);  // No resizing needed
+            return buffer;  // No resizing needed
         }
 
         double targetAspect = static_cast<double>(targetWidth) / targetHeight;
@@ -710,7 +705,7 @@ GIFImage::ImageSequence::resizeCover(const vector<PixelBGRA>& buffer,
             throw ImageParseException("Failed to lock bitmap for pixel extraction.");
         }
         std::vector<PixelBGRA> pixelData(targetWidth * targetHeight);
-        uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
+        const auto* src = static_cast<uint8_t*>(bitmapData.Scan0);
         for (uint32_t y = 0; y < targetHeight; ++y) {
             memcpy(&pixelData[y * targetWidth], src + y * bitmapData.Stride, targetWidth * 4);
         }
@@ -723,14 +718,13 @@ GIFImage::ImageSequence::resizeCover(const vector<PixelBGRA>& buffer,
         GeneralLogger::error("Unknown error resizing image.");
         return {};
     }
-    return {};
 }
 
 bool
 GIFImage::ImageSequence::drawMark(vector<PixelBGRA>& buffer,
                                   const uint32_t width,
                                   const uint32_t height,
-                                  const vector<PixelBGRA> markBuffer,
+                                  const vector<PixelBGRA>& markBuffer,
                                   const uint32_t markWidth,
                                   const uint32_t markHeight,
                                   const uint32_t x,
@@ -920,9 +914,7 @@ GIFImage::ImageSequence::parseBase64(const string& base64) noexcept {
         if (pStream) {
             pStream->Release();
         }
-        if (bitmap) {
-            delete bitmap;
-        }
+        delete bitmap;
     };
 
     try {
@@ -966,7 +958,7 @@ GIFImage::ImageSequence::parseBase64(const string& base64) noexcept {
             throw ImageParseException("Failed to lock bitmap for pixel extraction.");
         }
 
-        uint8_t* src = static_cast<uint8_t*>(bitmapData.Scan0);
+        auto* src = static_cast<uint8_t*>(bitmapData.Scan0);
         for (uint32_t y = 0; y < height; ++y) {
             memcpy(&result[y * width], src + y * bitmapData.Stride, width * 4);
         }

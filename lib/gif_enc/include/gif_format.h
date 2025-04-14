@@ -17,7 +17,7 @@ gifHeader(uint32_t width,
           uint32_t backgroundIndex,
           uint32_t minCodeLength,
           uint32_t loops,
-          const bool hasGlobalColorTable,
+          bool hasGlobalColorTable,
           const std::vector<PixelBGRA> &globalColorTable = {}) noexcept;
 
 std::vector<uint8_t>

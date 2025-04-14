@@ -4,8 +4,6 @@
 #ifdef IMSQ_USE_GDIPLUS
 
 #include <windows.h>
-//
-#include <gdiplus.h>
 
 class GdiPlusInitializer {
   private:
@@ -27,4 +25,4 @@ extern GdiPlusInitializer gdiPlusInitializer;
 
 #endif  // IMSQ_USE_GDIPLUS
 
-#endif  // #include "imsq_gdi.h"
+#endif  // GIF_IMAGE_GDI_INITIALIZER_H

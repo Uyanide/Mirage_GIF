@@ -119,7 +119,7 @@ LZWDecompressImpl::process(const span<uint8_t>& data) {
         code = popCode();
     }
     while (code != -1 && !m_finished) {
-        if (const uint16_t codeU = static_cast<uint16_t>(code); codeU == m_cleanCode) {
+        if (const auto codeU = static_cast<uint16_t>(code); codeU == m_cleanCode) {
             _reset();
         } else if (codeU == m_endCode) {
             m_finished = true;

@@ -32,6 +32,7 @@ class GIFEncoder {
      * @brief Add a frame to the GIF file.
      * @param frame         The frame data as indexes in palette.
      * @param delay         Frame duration in milliseconds.
+     * @param disposalMethod 0-3
      * @param minCodeLength If 0, the global one will be used.
      * @param palette       The color palette for the frame.
      *                      If empty, the global color table will be used.
@@ -48,6 +49,7 @@ class GIFEncoder {
      * @param frame         The frame data that can be directly written to the
      *                      GIF file.
      * @param delay         Frame duration in milliseconds.
+     * @param disposalMethod 0-3
      * @param minCodeLength If 0, the global one will be used.
      * @param palette       The color palette for the frame.
      *                      If empty, the global color table will be used.

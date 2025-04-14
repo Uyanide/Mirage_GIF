@@ -2,12 +2,11 @@
 #define IMAGE_SEQUENCE_DITHER_H
 
 #include <array>
-#include <cstring>
 
 #include "def.h"
 
-namespace ImageSequence {
-namespace Dither {
+
+namespace ImageSequence::Dither {
 
 template <uint8_t size>
 class BayerOrderedDithering {
@@ -15,7 +14,6 @@ class BayerOrderedDithering {
     static void
     orderedDithering(uint8_t* out, const uint8_t* in, uint32_t width, uint32_t height) {
         // do nothing
-        return;
     }
 };
 
@@ -42,7 +40,7 @@ class BayerOrderedDithering<4> {
     }
 };
 
-}  // namespace Dither
-}  // namespace ImageSequence
+} // namespace ImageSequence::Dither
+
 
 #endif  // IMAGE_SEQUENCE_DITHER_H

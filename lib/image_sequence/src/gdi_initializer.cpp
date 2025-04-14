@@ -2,6 +2,9 @@
 
 #include "gdi_initializer.h"
 
+#include <gdiplus.h>
+
+
 bool
 GdiPlusInitializer::initialize() {
     if (initialized) return true;

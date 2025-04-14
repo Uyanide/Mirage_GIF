@@ -12,7 +12,7 @@ using std::string, std::vector;
 
 class ImageSequenceStreamImpl : public ImageSequenceStream {
   public:
-    ImageSequenceStreamImpl(const string&);
+    explicit ImageSequenceStreamImpl(const string&);
 
     ~ImageSequenceStreamImpl() override = default;
 
