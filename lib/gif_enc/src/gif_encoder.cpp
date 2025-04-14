@@ -107,6 +107,9 @@ GIFEnc::GIFEncoder::addFrame(
             "Local palette should be provided when global color table is "
             "empty");
     }
+    if (frame.size() != m_width * m_height) {
+        throw GIFEnc::GIFEncodeException("Frame size mismatch");
+    }
 
     uint32_t mcl;
     const std::vector<PixelBGRA>* pal = nullptr;
@@ -204,14 +207,14 @@ GIFEnc::GIFEncoder::addFrameCompressed(
         }
     }
 
-    auto buffer = GIFEnc::gifFrameHeader(m_width,
-                                         m_height,
-                                         delay,
-                                         m_hasTransparency,
-                                         m_transparentIndex,
-                                         disposalMethod,
-                                         mcl,
-                                         pal ? *pal : vector<PixelBGRA>{});
+    vector buffer = GIFEnc::gifFrameHeader(m_width,
+                                           m_height,
+                                           delay,
+                                           m_hasTransparency,
+                                           m_transparentIndex,
+                                           disposalMethod,
+                                           mcl,
+                                           pal ? *pal : vector<PixelBGRA>{});
     if (buffer.empty()) {
         throw GIFEnc::GIFEncodeException("Frame header generation failed");
     }

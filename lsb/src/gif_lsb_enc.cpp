@@ -23,7 +23,7 @@ using namespace GIFImage;
 using namespace GIFLsb;
 using namespace GIFEnc;
 
-static constexpr size_t READ_CHUNK_SIZE = 1 << 24;  // 16 MiB
+static constexpr size_t READ_CHUNK_SIZE = 1 << 20;  // 1 MiB
 // static const string ENCODED_FILE_NAME   = "mtk";
 static constexpr double PROGRESS_STEP = 0.0314;  // 3.14%
 

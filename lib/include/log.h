@@ -17,15 +17,12 @@ enum LogIndent : uint32_t {
     DETAIL  = 2,
 };
 
-extern std::ostream* logStream;
-
-void
-initLogStream() noexcept;
-
 inline void
-info(const std::string_view& msg, const LogIndent indent = GENERAL, const bool color = true) {
+info(const std::string_view& msg,
+     const LogIndent indent  = GENERAL,
+     const bool color        = true,
+     std::ostream* logStream = &std::cerr) {
     std::lock_guard<std::mutex> lock(logMutex);
-    initLogStream();
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[92m" : "") << "[INFO] ";
@@ -34,9 +31,11 @@ info(const std::string_view& msg, const LogIndent indent = GENERAL, const bool c
 }
 
 inline void
-warning(const std::string_view& msg, const LogIndent indent = GENERAL, const bool color = true) {
+warning(const std::string_view& msg,
+        const LogIndent indent  = GENERAL,
+        const bool color        = true,
+        std::ostream* logStream = &std::cerr) {
     std::lock_guard<std::mutex> lock(logMutex);
-    initLogStream();
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[93m" : "") << "[WARN] ";
@@ -45,9 +44,11 @@ warning(const std::string_view& msg, const LogIndent indent = GENERAL, const boo
 }
 
 inline void
-error(const std::string_view& msg, const LogIndent indent = GENERAL, const bool color = true) {
+error(const std::string_view& msg,
+      const LogIndent indent  = GENERAL,
+      const bool color        = true,
+      std::ostream* logStream = &std::cerr) {
     std::lock_guard<std::mutex> lock(logMutex);
-    initLogStream();
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[91m" : "") << "[ERROR] ";

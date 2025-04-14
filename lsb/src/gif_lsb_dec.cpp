@@ -13,7 +13,7 @@ using namespace GIFImage;
 using namespace GIFLsb;
 using std::string, std::vector;
 
-static constexpr uint32_t WRITE_BUFFER_SIZE = 1 << 24;  // 16 MiB
+static constexpr uint32_t WRITE_BUFFER_SIZE = 1 << 20;  // 1 MiB
 static constexpr double PROGRESS_STEP       = 0.0314;   // 3.14%
 
 using PopByteFunc = std::function<uint8_t()>;

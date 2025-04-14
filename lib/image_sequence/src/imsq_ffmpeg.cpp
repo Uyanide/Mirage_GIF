@@ -483,12 +483,16 @@ ImageSequence::parseBase64(const string& base64) noexcept {
     uint8_t* buffer            = nullptr;
 
     const auto defer = [&]() {
-        if (packet) av_packet_free(&packet);
         if (frame) av_frame_free(&frame);
+        if (packet) av_packet_free(&packet);
         if (codecCtx) avcodec_free_context(&codecCtx);
-        if (pbCtx) avio_context_free(&pbCtx);
+        if (pbCtx) {
+            av_freep(&(pbCtx->buffer));
+            avio_context_free(&pbCtx);
+        } else if (buffer) {
+            av_freep(&buffer);
+        }
         if (formatCtx) avformat_close_input(&formatCtx);
-        if (buffer) av_free(buffer);
     };
 
     try {
@@ -496,16 +500,14 @@ ImageSequence::parseBase64(const string& base64) noexcept {
         if (pos == string::npos) {
             throw ImageParseException("Invalid base64 data.");
         }
-        const auto substr = std::string_view(base64.data() + pos + 7);
-
-        int decodedSize = AV_BASE64_DECODE_SIZE(substr.size());
+        const auto substr      = std::string_view(base64.data() + pos + 7);
+        const auto decodedSize = AV_BASE64_DECODE_SIZE(substr.size());
         vector<uint8_t> decodedData(decodedSize);
 
-        int actualSize = av_base64_decode(decodedData.data(), substr.data(), substr.size());
+        int actualSize = av_base64_decode(decodedData.data(), substr.data(), decodedSize);
         if (actualSize <= 0) {
             throw ImageParseException("Failed to decode base64 data");
         }
-
         decodedData.resize(actualSize);
 
         AVIOContext* ioCtx = nullptr;
@@ -554,7 +556,6 @@ ImageSequence::parseBase64(const string& base64) noexcept {
                 break;
             }
         }
-
         if (videoStreamIdx == -1) {
             throw ImageParseException("No video stream found in data");
         }
@@ -595,8 +596,8 @@ ImageSequence::parseBase64(const string& base64) noexcept {
                     height = frame->height;
 
                     SwsContext* swsCtx = sws_getContext(
-                        frame->width,
-                        frame->height,
+                        width,
+                        height,
                         static_cast<AVPixelFormat>(frame->format),
                         width,
                         height,
@@ -611,8 +612,8 @@ ImageSequence::parseBase64(const string& base64) noexcept {
                     }
 
                     result.resize(width * height);
-                    uint8_t* dstData[1] = {reinterpret_cast<uint8_t*>(result.data())};
-                    int dstLinesize[1]  = {static_cast<int>(width * sizeof(PixelBGRA))};
+                    uint8_t* dstData[1]    = {reinterpret_cast<uint8_t*>(result.data())};
+                    int32_t dstLinesize[1] = {static_cast<int>(width * sizeof(PixelBGRA))};
 
                     sws_scale(
                         swsCtx,

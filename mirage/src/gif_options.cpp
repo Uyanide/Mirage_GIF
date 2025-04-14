@@ -69,7 +69,7 @@ Options::parseArgs(int argc, char** argv) noexcept {
         //
         ("h,help", "Show help message");
 
-    options.positional_help("inner cover").show_positional_help();
+    options.positional_help("inner cover");
     options.parse_positional({"inner", "cover"});
 
     try {

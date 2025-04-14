@@ -234,17 +234,18 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
 
     GeneralLogger::info("Writing GIF...");
 
+    GIFEnc::GIFEncoder* encoder = nullptr;
     try {
-        const auto encoder = new GIFEnc::GIFEncoder(args.outputFile,
-                                                    args.width,
-                                                    args.height,
-                                                    TRANSPARENT_INDEX,
-                                                    MIN_CODE_LENGTH,
-                                                    true,
-                                                    TRANSPARENT_INDEX,
-                                                    0,
-                                                    true,
-                                                    GCT);
+        encoder = new GIFEnc::GIFEncoder(args.outputFile,
+                                         args.width,
+                                         args.height,
+                                         TRANSPARENT_INDEX,
+                                         MIN_CODE_LENGTH,
+                                         true,
+                                         TRANSPARENT_INDEX,
+                                         0,
+                                         true,
+                                         GCT);
 
         for (uint32_t i = 0; i < args.frameCount; ++i) {
             if (outFrames[i].empty()) continue;
@@ -256,12 +257,13 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
             return false;
         }
         GeneralLogger::info("Output file: " + encoder->getFileName());
+        delete encoder;
         return true;
     } catch (const std::exception& e) {
         GeneralLogger::error(std::string("Failed to write GIF file: ") + e.what());
-        return false;
     } catch (...) {
         GeneralLogger::error("Failed to write GIF file: unknown error");
-        return false;
     }
+    delete encoder;
+    return false;
 }

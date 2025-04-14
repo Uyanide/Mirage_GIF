@@ -42,14 +42,6 @@ wstrToUtf8(const wchar_t* wstr) {
     return str;
 }
 
-std::ostream* GeneralLogger::logStream = nullptr;
-
-void
-GeneralLogger::initLogStream() noexcept {
-    if (GeneralLogger::logStream == nullptr) {
-        GeneralLogger::logStream = &std::cerr;
-    }
-}
 #ifdef MOCK_COMMAND_LINE
 
 #if defined(__GNUC__)

@@ -12,12 +12,13 @@ if(WIN32)
     find_package(Leptonica CONFIG REQUIRED)
     find_package(Webp CONFIG REQUIRED)
 
-    list(APPEND IMSQ_LINK_LIBRARIES WebP::webp WebP::webpdecoder WebP::webpdemux gdiplus)
+    list(APPEND IMSQ_LINK_LIBRARIES WebP::webp WebP::webpdecoder WebP::webpdemux gdiplus leptonica)
     list(APPEND IMSQ_SRC
         ${CMAKE_CURRENT_LIST_DIR}/src/imsq_gdi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/imsqs_gdi.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/gdi_initializer.cpp)
-    set(IMSQ_INCLUDE_DIRS "${Webp_INCLUDE_DIRS}")
+        ${CMAKE_CURRENT_LIST_DIR}/src/gdi_initializer.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/quant_leptonica.cpp)
+    list(APPEND IMSQ_INCLUDE_DIRS ${Webp_INCLUDE_DIRS} ${Leptonica_INCLUDE_DIRS})
     set(IMSQ_COMPILE_DEFINITIONS "IMSQ_USE_GDIPLUS")
 else()
     find_package(PkgConfig REQUIRED)
@@ -25,16 +26,16 @@ else()
     pkg_check_modules(LEPTONICA REQUIRED lept)
     pkg_check_modules(FFMPEG REQUIRED libavcodec libavformat libavutil libswscale libavfilter)
 
-    set(IMSQ_LINK_LIBRARIES "${FFMPEG_LIBRARIES}")
-    list(APPEND IMSQ_SRC ${CMAKE_CURRENT_LIST_DIR}/src/imsq_ffmpeg.cpp ${CMAKE_CURRENT_LIST_DIR}/src/imsqs_ffmpeg.cpp)
-    set(IMSQ_INCLUDE_DIRS "${FFMPEG_INCLUDE_DIRS}")
+    list(APPEND IMSQ_LINK_LIBRARIES ${FFMPEG_LIBRARIES} ${LEPTONICA_LIBRARIES})
+    list(APPEND IMSQ_SRC
+        ${CMAKE_CURRENT_LIST_DIR}/src/imsq_ffmpeg.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/imsqs_ffmpeg.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/quant_leptonica.cpp)
+    list(APPEND IMSQ_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIRS} ${LEPTONICA_INCLUDE_DIRS})
     set(IMSQ_COMPILE_DEFINITIONS "IMSQ_USE_FFMPEG")
 endif()
 
-add_library(image_sequence STATIC
-    ${IMSQ_SRC}
-    ${CMAKE_CURRENT_LIST_DIR}/src/quant_leptonica.cpp
-)
+add_library(image_sequence STATIC ${IMSQ_SRC})
 
 if(NOT TARGET_COMPILE_OPTIONS)
     if(CMAKE_COMPILER_IS_GNUCXX)
@@ -59,11 +60,8 @@ target_compile_options(image_sequence PRIVATE ${TARGET_COMPILE_OPTIONS})
 target_include_directories(image_sequence PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/../include
     ${CMAKE_CURRENT_LIST_DIR}/include
-    ${Leptonica_INCLUDE_DIRS}
     ${IMSQ_INCLUDE_DIRS}
 )
-
-list(APPEND IMSQ_LINK_LIBRARIES ${Leptonica_LIBRARIES})
 
 # -lm
 if(CMAKE_COMPILER_IS_GNUCXX)
