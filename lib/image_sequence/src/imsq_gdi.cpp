@@ -183,7 +183,7 @@ ImageSequenceWebpImpl::ImageSequenceWebpImpl(const std::string& filename) {
 
         m_frameCount = WebPDemuxGetI(m_demux, WEBP_FF_FRAME_COUNT);
         if (m_frameCount == 0) {
-            GeneralLogger::warning("WebP image has no frames: " + filename);
+            GeneralLogger::warn("WebP image has no frames: " + filename);
             m_frameCount = 1;
         }
         GeneralLogger::info("Frame count: " + std::to_string(m_frameCount), GeneralLogger::DETAIL);
@@ -214,7 +214,7 @@ ImageSequenceWebpImpl::ImageSequenceWebpImpl(const std::string& filename) {
             } while (WebPDemuxNextFrame(&iter) && frame_index < m_frameCount);
             WebPDemuxReleaseIterator(&iter);
         } else {
-            GeneralLogger::warning("Failed to get WebP frame iterator: " + filename);
+            GeneralLogger::warn("Failed to get WebP frame iterator: " + filename);
             for (uint32_t i = 0; i < m_frameCount; ++i) {
                 m_delays[i] = GIFImage::ImageSequence::DEFAULT_DELAY;
             }
@@ -258,9 +258,9 @@ ImageSequenceWebpImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t h
             }
             const uint32_t srcWidth = iter.width, srcHeight = iter.height;
             if (srcWidth != m_width || srcHeight != m_height) {
-                GeneralLogger::warning("WebP frame dimensions do not match: " + std::to_string(srcWidth) + "x" +
-                                       std::to_string(srcHeight) + " != " + std::to_string(m_width) + "x" +
-                                       std::to_string(m_height));
+                GeneralLogger::warn("WebP frame dimensions do not match: " + std::to_string(srcWidth) + "x" +
+                                    std::to_string(srcHeight) + " != " + std::to_string(m_width) + "x" +
+                                    std::to_string(m_height));
             }
 
             m_config.options.use_threads       = 1;
@@ -383,7 +383,7 @@ ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
 
         uint32_t frameCount = m_image->GetFrameCount(&Gdiplus::FrameDimensionTime);
         if (frameCount == 0 || frameCount == 1) {
-            GeneralLogger::warning("Image has no frames or only one frame: " + filename);
+            GeneralLogger::warn("Image has no frames or only one frame: " + filename);
             frameCount = 1;  // Default to 1 frame if no frames are found
         }
         GeneralLogger::info("Frame count: " + std::to_string(frameCount), GeneralLogger::DETAIL);
@@ -457,9 +457,9 @@ ImageSequenceImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t heigh
                                           std::to_string(srcHeight));
             }
             if (srcWidth != m_width || srcHeight != m_height) {
-                GeneralLogger::warning("Frame dimensions not consistent: " + std::to_string(srcWidth) + "x" +
-                                       std::to_string(srcHeight) + " != " + std::to_string(m_width) + "x" +
-                                       std::to_string(m_height));
+                GeneralLogger::warn("Frame dimensions not consistent: " + std::to_string(srcWidth) + "x" +
+                                    std::to_string(srcHeight) + " != " + std::to_string(m_width) + "x" +
+                                    std::to_string(m_height));
             }
 
             if (width != srcWidth || height != srcHeight) {
@@ -571,8 +571,8 @@ GIFImage::ImageSequence::drawText(vector<PixelBGRA>& buffer,
             if (fontFamilyPara == FALLBACK_FONT) {
                 throw ImageParseException("Failed to create font.");
             }
-            GeneralLogger::warning("Failed to create font family: " + fontFamilyPara + ". Falling back to " +
-                                   FALLBACK_FONT);
+            GeneralLogger::warn("Failed to create font family: " + fontFamilyPara + ". Falling back to " +
+                                FALLBACK_FONT);
             return drawText(buffer,
                             width,
                             height,

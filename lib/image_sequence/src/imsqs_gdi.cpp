@@ -8,7 +8,7 @@
 #include "imsq_stream.h"
 
 using namespace GIFImage;
-using std::string, std::vector;
+using std::string;
 
 class ImageSequenceStreamImpl : public ImageSequenceStream {
   public:
