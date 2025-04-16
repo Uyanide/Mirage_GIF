@@ -18,7 +18,8 @@ getThreadCount() {
 
 class OptionInvalidException final : public std::exception {
   public:
-    explicit OptionInvalidException(const std::string&& msg) : msg(msg) {}
+    explicit OptionInvalidException(const std::string&& msg)
+        : msg(msg) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -58,6 +59,8 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         //
         ("l,local_palette", "Use local palette. If enabled, each frame will have its own palette.")
         //
+        ("s,single", "Generate a single frame GIF. The output will be compatible with other LSB decoders.")
+        //
         ("a,threshold",
          "Transparency threshold (0-255), pixels with a alpha value below this will be set transparent.",
          cxxopts::value<uint32_t>()->default_value(std::to_string(Defaults::TRANSPARENT_THRESHOLD)))
@@ -92,6 +95,7 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         gifOptions.transparency         = result.count("transparency");
         gifOptions.grayscale            = result.count("grayscale");
         gifOptions.enableLocalPalette   = result.count("local_palette");
+        gifOptions.singleFrame          = result.count("single");
         gifOptions.numColors            = result["colors"].as<uint32_t>();
         gifOptions.transparentThreshold = result["threshold"].as<uint32_t>();
         gifOptions.threadCount          = result["threads"].as<uint32_t>();
@@ -127,5 +131,8 @@ EncodeOptions::checkValid() const {
     }
     if (transparentThreshold > 255) {
         throw OptionInvalidException("Transparent threshold must be between 0 and 255");
+    }
+    if (singleFrame && transparency) {
+        throw OptionInvalidException("Transparency should be disabled when generating a single frame GIF");
     }
 }

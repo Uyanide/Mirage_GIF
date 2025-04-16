@@ -17,7 +17,8 @@ class QuantizerException : public std::exception {
     const string message;
 
   public:
-    explicit QuantizerException(const string&& msg) : message(msg) {}
+    explicit QuantizerException(const string&& msg)
+        : message(msg) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -177,7 +178,7 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
 
         // If all pixels are transparent
         if (isAllTransparent) {
-            GeneralLogger::warning("All pixels are considered as transparent, skipping quantization.");
+            GeneralLogger::warn("All pixels are considered as transparent, skipping quantization.");
             return QuantizerResult{
                 .isValid      = false,
                 .errorMessage = "All pixels are transparent",
@@ -246,7 +247,7 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
                 if (byte >= colorCount) {
                     byte = colorCount - 1;
                     if (!warned) {
-                        GeneralLogger::warning("Index out of bounds, using last color in palette");
+                        GeneralLogger::warn("Index out of bounds, using last color in palette");
                         warned = true;
                     }
                 }
@@ -259,7 +260,7 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
             // It is indeed possible to convert colors to grayscale values, dither by grayscale and map back
             // into RGB space. To avoid distortion a threshold to the Color perception distance could be applied.
             // However, I didn't manage to find the right parameter for this approach, so ...
-            GeneralLogger::warning("Ordered dithering works poorly for color images, skipping dithering.");
+            GeneralLogger::warn("Ordered dithering works poorly for color images, skipping dithering.");
         } else if (ditherMode == DitherOrdered && grayScale) {
             orderedDithering(pixelsAdjusted, sortedPalette, sortedPaletteGray, indices, width, height, colorCount);
         }
@@ -267,16 +268,16 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
         // Known issue with Leptonica: if numColors == 2, the palette
         // may contain 3 colors, but only 2 are required.
         if (colorCount > numColors) {
-            GeneralLogger::warning("Unexpected number of colors in palette: " + std::to_string(colorCount) +
-                                   ", expected: " + std::to_string(numColors));
-            GeneralLogger::warning("Shrinking palette to " + std::to_string(numColors) + " colors...");
+            GeneralLogger::warn("Unexpected number of colors in palette: " + std::to_string(colorCount) +
+                                ", expected: " + std::to_string(numColors));
+            GeneralLogger::warn("Shrinking palette to " + std::to_string(numColors) + " colors...");
             sortedPalette = shrinkPalette(sortedPalette, indices, colorCount, numColors);
         }
         // simply fill with black
         else if (colorCount < numColors) {
-            GeneralLogger::warning("Unexpected number of colors in palette: " + std::to_string(colorCount) +
-                                   ", expected: " + std::to_string(numColors));
-            GeneralLogger::warning("Filling palette with black...");
+            GeneralLogger::warn("Unexpected number of colors in palette: " + std::to_string(colorCount) +
+                                ", expected: " + std::to_string(numColors));
+            GeneralLogger::warn("Filling palette with black...");
             sortedPalette.resize(numColors, makeBGRA(0, 0, 0, 255));
         }
 

@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -18,11 +19,12 @@
 #include "path.h"
 #include "quantizer.h"
 
-using std::string, std::vector, std::span;
+using std::string, std::vector;
 using namespace GIFImage;
 using namespace GIFLsb;
 using namespace GIFEnc;
 
+static constexpr size_t MAX_HEADER_SIZE = 1 << 12;  // 4 KiB
 static constexpr size_t READ_CHUNK_SIZE = 1 << 20;  // 1 MiB
 // static const string ENCODED_FILE_NAME   = "mtk";
 static constexpr double PROGRESS_STEP = 0.0314;  // 3.14%
@@ -86,8 +88,8 @@ quant(const ImageSequenceRef& image,
 
     auto threadCount = args.threadCount;
     if (threadCount > frameCount) {
-        GeneralLogger::warning("Number of threads is greater than number of frames. Reducing to " +
-                               std::to_string(frameCount));
+        GeneralLogger::warn("Number of threads is greater than number of frames. Reducing to " +
+                            std::to_string(frameCount));
         threadCount = frameCount;
     }
     const uint32_t framePerThread = (frameCount + threadCount - 1) / threadCount;
@@ -276,7 +278,8 @@ genPalettes(GetPaletteFunc& getPalette,
 
 class FileReaderException final : public std::exception {
   public:
-    explicit FileReaderException(const string&& message) : m_message(message) {}
+    explicit FileReaderException(const string&& message)
+        : m_message(message) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -289,7 +292,8 @@ class FileReaderException final : public std::exception {
 
 class FileReader {
   public:
-    FileReader(const string& filePath, const uint32_t lsbLevel) : m_bitsPerPixel(lsbLevel * 3), m_buffer(READ_CHUNK_SIZE) {
+    FileReader(const string& filePath, const uint32_t lsbLevel)
+        : m_bitsPerPixel(lsbLevel * 3), m_buffer(READ_CHUNK_SIZE) {
         m_fileName = getFileName(filePath);
         m_filePath = std::filesystem::path(localizePath(filePath));
         if (!std::filesystem::exists(m_filePath)) {
@@ -378,8 +382,8 @@ class FileReader {
         // header.insert(header.end(), extName.begin(), extName.end());
         header.insert(header.end(), m_fileName.begin(), m_fileName.end());
         header.push_back(1);
-        if (header.size() >= READ_CHUNK_SIZE) {
-            header.resize(READ_CHUNK_SIZE);
+        if (header.size() >= MAX_HEADER_SIZE) {
+            header.resize(MAX_HEADER_SIZE);
             *(header.end() - 2) = 1;
             *(header.end() - 1) = 0;
         }
@@ -388,8 +392,8 @@ class FileReader {
         string mimeType  = mimeP ? string(mimeP) : "application/octet-stream";
         header.insert(header.end(), mimeType.begin(), mimeType.end());
         header.push_back(0);
-        if (header.size() > READ_CHUNK_SIZE) {
-            header.resize(READ_CHUNK_SIZE);
+        if (header.size() > MAX_HEADER_SIZE) {
+            header.resize(MAX_HEADER_SIZE);
             *(header.end() - 1) = 0;
         }
         std::memcpy(m_buffer.data(), header.data(), header.size());
@@ -437,6 +441,11 @@ class FileReader {
     bool m_isHeader = true;
 };
 
+static size_t
+getRequiredSize(const uint32_t lsbLevel, const size_t fileDataSize) {
+    return (fileDataSize + MAX_HEADER_SIZE) * 8 / lsbLevel / 3;
+}
+
 bool
 GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
     GeneralLogger::info("Starting GIF LSB encoding...");
@@ -445,6 +454,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
     GeneralLogger::info("Disable dither: " + std::to_string(args.disableDither), GeneralLogger::STEP);
     GeneralLogger::info("Transparency: " + std::to_string(args.transparency), GeneralLogger::STEP);
     GeneralLogger::info("Enable local palettes: " + std::to_string(args.enableLocalPalette), GeneralLogger::STEP);
+    GeneralLogger::info("Generate single frame: " + std::to_string(args.singleFrame), GeneralLogger::STEP);
     GeneralLogger::info("Grayscale: " + std::to_string(args.grayscale), GeneralLogger::STEP);
     GeneralLogger::info("Mark text: " + args.markText, GeneralLogger::STEP);
     if (args.transparency) {
@@ -466,39 +476,52 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
     if (!image) {
         return false;
     }
-    const uint32_t frameCount            = image->getFrameCount();
-    const auto delays                    = image->getDelays();
-    const uint32_t width                 = image->getWidth();
-    const uint32_t height                = image->getHeight();
+    uint32_t frameCount                  = image->getFrameCount();
+    auto delays                          = image->getDelays();
+    uint32_t width                       = image->getWidth();
+    uint32_t height                      = image->getHeight();
     const auto [lsbLevel, minCodeLength] = getLsbLevelAndMinCodeLength(args.numColors);
 
-    uint32_t markWidth = 0, markHeight = 0;
-    if (!markImage.empty()) {
-        markHeight = height * args.markRatio;
-        markWidth  = static_cast<double>(markHeight) * GIFLsb::markWidth / GIFLsb::markHeight;
-
-        markImage = ImageSequence::resizeCover(
-            markImage,
-            GIFLsb::markWidth,
-            GIFLsb::markHeight,
-            markWidth,
-            markHeight);
-    }
-
-    GeneralLogger::info("Quantifying image...");
-
-    GetPaletteFunc getPalette = nullptr;
-    GetIndicesFunc getIndices = nullptr;
-
-    if (!genPalettes(getPalette, getIndices, args, image, markImage, markWidth, markHeight, lsbLevel, minCodeLength, frameCount, width, height)) {
-        return false;
-    }
-
     try {
+
         GeneralLogger::info("Reading encrypt file...");
         FileReader fileReader(args.encyptFile, lsbLevel);
         const size_t fileSize = fileReader.getSize();
         GeneralLogger::info("Size of file to encrypt: " + std::to_string(fileSize), GeneralLogger::STEP);
+
+        if (args.singleFrame) {
+            const auto requiredSize = getRequiredSize(lsbLevel, fileSize);
+            if (requiredSize > width * height) {
+                const auto ratio = std::sqrt(static_cast<double>(requiredSize) / (width * height));
+                width            = static_cast<uint32_t>(std::ceil(width * ratio));
+                height           = static_cast<uint32_t>(std::ceil(height * ratio));
+                GeneralLogger::warn("Image does not have enough pixels to store the file. Resized to " +
+                                    std::to_string(width) + "x" + std::to_string(height));
+            }
+            frameCount = 1;
+        }
+
+        uint32_t markWidth = 0, markHeight = 0;
+        if (!markImage.empty()) {
+            markHeight = height * args.markRatio;
+            markWidth  = static_cast<double>(markHeight) * GIFLsb::markWidth / GIFLsb::markHeight;
+
+            markImage = ImageSequence::resizeCover(
+                markImage,
+                GIFLsb::markWidth,
+                GIFLsb::markHeight,
+                markWidth,
+                markHeight);
+        }
+
+        GeneralLogger::info("Quantifying image...");
+
+        GetPaletteFunc getPalette = nullptr;
+        GetIndicesFunc getIndices = nullptr;
+
+        if (!genPalettes(getPalette, getIndices, args, image, markImage, markWidth, markHeight, lsbLevel, minCodeLength, frameCount, width, height)) {
+            return false;
+        }
 
         GeneralLogger::info("Initializing GIF encoder...");
         GIFEncoder encoder(args.outputFile,
@@ -532,23 +555,8 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
                     } else {
                         const auto bits = fileReader.popBits();
                         res             = args.numColors * bits + index;
-                        // const auto& color       = (*palette)[res];
-                        // const uint32_t bitsFromColor = (color.b & 1) | ((color.g & 1) << 1) | ((color.r & 1) << 2);
-                        // if (bits != bitsFromColor) {
-                        //     GeneralLogger::error("Error: bits mismatch: " + std::to_string(bits) +
-                        //                          " != " + std::to_string(bitsFromColor));
-                        //     return false;
-                        // }
                     }
                     *bufferIt++ = res;
-
-                    // static FILE* tmp = fopen("tmp-enc.txt", "w");
-                    // fprintf(tmp,
-                    //         "%02hhx%02hhx%02hhx%02hhx\n",
-                    //         palette->at(res).b,
-                    //         palette->at(res).g,
-                    //         palette->at(res).r,
-                    //         palette->at(res).a);
                 }
                 encoder.addFrame(frameResultBuffer,
                                  delays[frameIndex],

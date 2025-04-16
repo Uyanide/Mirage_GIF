@@ -105,8 +105,36 @@ def process_lsb_png():
         exit(1)
 
 
+def process_single_frame():
+    return_code = execute_program(enc_path, [
+        os.path.join(script_root, "..", "images", "气气.gif"),
+        os.path.join(script_root, "..", "images", "马达.gif"),
+        "-o", os.path.join(script_root, "lsb", "single"),
+        "-s"
+    ])
+    if return_code != 0:
+        exit(return_code)
+
+    return_code = execute_program(dec_path, [
+        os.path.join(script_root, "lsb", "single.gif"),
+        "-o", "single-dec",
+        "-d", os.path.join(script_root, "lsb")
+    ])
+    if return_code != 0:
+        exit(return_code)
+
+    is_same = compare_file(
+        os.path.join(script_root, "..", "images", "马达.gif"),
+        os.path.join(script_root, "lsb", "single-dec.gif")
+    )
+    if not is_same:
+        log_error("Failed.")
+        exit(1)
+
+
 if __name__ == "__main__":
     process_lsb_gif()
     process_lsb_webp()
     process_lsb_png()
+    process_single_frame()
     log_info("All tests passed.")

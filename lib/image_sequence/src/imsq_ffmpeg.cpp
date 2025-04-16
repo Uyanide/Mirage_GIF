@@ -25,7 +25,8 @@ using std::string, std::vector, std::span;
 
 class ImageParseException final : public std::exception {
   public:
-    explicit ImageParseException(const string&& message) : m_msg(message) {}
+    explicit ImageParseException(const string&& message)
+        : m_msg(message) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -193,7 +194,7 @@ ImageSequenceImpl::ImageSequenceImpl(const string& filename) {
                     sws_freeContext(swsCtx);
                     // resize if size mismatch
                     if (m_width != frame->width || m_height != frame->height) {
-                        GeneralLogger::warning("Frame size not consistant, resizing to fit.");
+                        GeneralLogger::warn("Frame size not consistant, resizing to fit.");
                         // already resized
                     }
                     m_frameBuffer.push_back(std::move(frameBuffer));

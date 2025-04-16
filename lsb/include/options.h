@@ -1,10 +1,9 @@
 #ifndef GIFLSB_OPTIONS_H
 #define GIFLSB_OPTIONS_H
 
+#include <cstdint>
 #include <optional>
 #include <string>
-
-#include "def.h"
 
 namespace GIFLsb {
 
@@ -42,6 +41,7 @@ class EncodeOptions {
     bool transparency             = false;
     bool grayscale                = false;
     bool enableLocalPalette       = false;
+    bool singleFrame              = false;
     std::string outputFile        = Defaults::OUTPUT_FILE;
     uint32_t numColors            = Defaults::NUM_COLORS;
     uint32_t transparentThreshold = Defaults::TRANSPARENT_THRESHOLD;

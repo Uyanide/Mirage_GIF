@@ -31,10 +31,10 @@ info(const std::string_view& msg,
 }
 
 inline void
-warning(const std::string_view& msg,
-        const LogIndent indent  = GENERAL,
-        const bool color        = true,
-        std::ostream* logStream = &std::cerr) {
+warn(const std::string_view& msg,
+     const LogIndent indent  = GENERAL,
+     const bool color        = true,
+     std::ostream* logStream = &std::cerr) {
     std::lock_guard<std::mutex> lock(logMutex);
     if (logStream == nullptr) return;
 
