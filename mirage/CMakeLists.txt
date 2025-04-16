@@ -42,7 +42,7 @@ target_link_directories(GIFMirage PRIVATE
 )
 
 target_link_libraries(GIFMirage PRIVATE
-    gif_enc
+    naive_gif
     image_sequence)
 
 target_include_directories(GIFMirage PRIVATE
@@ -56,8 +56,8 @@ if(WIN32)
     target_compile_definitions(GIFMirage PRIVATE UNICODE _UNICODE)
 endif()
 
-target_compile_options(GIFMirage PRIVATE ${TARGET_COMPILE_OPTIONS})
+target_compile_options(GIFMirage PRIVATE ${GLOBAL_COMPILE_OPTIONS})
 
-target_link_options(GIFMirage PRIVATE ${TARGET_LINK_OPTIONS})
+target_link_options(GIFMirage PRIVATE ${GLOBAL_LINK_OPTIONS})
 
-target_compile_definitions(GIFMirage PRIVATE ${TARGET_COMPILE_DEFINITIONS})
+target_compile_definitions(GIFMirage PRIVATE ${GLOBAL_COMPILE_DEFINITIONS})

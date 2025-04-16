@@ -26,12 +26,13 @@ static constexpr uint32_t MIN_CODE_LENGTH   = 2;
 static const auto ditherFunc                = ImageSequence::Dither::BayerOrderedDithering<4>::orderedDithering;
 
 static vector<uint32_t>
-getFrameIndices(const uint32_t* delays, const uint32_t numFrames, const uint32_t targetDelay, const uint32_t targetNumFrames) {
+getFrameIndices(const vector<uint32_t>& delays, const uint32_t targetDelay, const uint32_t targetNumFrames) {
     static const auto round = [](const double value) -> uint32_t {
         return static_cast<uint32_t>(std::round(value));
     };
 
-    uint32_t srcDuration = 0;
+    const uint32_t numFrames = delays.size();
+    uint32_t srcDuration     = 0;
     for (uint32_t i = 0; i < numFrames; ++i) {
         srcDuration += delays[i];
     }
@@ -45,14 +46,14 @@ getFrameIndices(const uint32_t* delays, const uint32_t numFrames, const uint32_t
     uint32_t totalDuration = targetNumFrames * targetDelay;
     uint32_t loops         = round(totalDuration / static_cast<double>(srcDuration));
     if (loops == 0) loops = 1;
-    double eqDelay = double(targetDelay) * srcDuration * loops / totalDuration;
+    double eqDelay = double(srcDuration) * loops / targetNumFrames;
     auto ret       = vector<uint32_t>(targetNumFrames);
 
     ret[0]             = 0;
     uint32_t currFrame = 0, currUntil = delays[0];
     double currTime = eqDelay;
     for (uint32_t i = 1; i < targetNumFrames; ++i) {
-        while (currTime > currUntil) {
+        while (currTime >= currUntil) {
             currFrame = (currFrame + 1) % numFrames;
             currUntil += delays[currFrame];
         }
@@ -79,9 +80,9 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
         return false;
     }
     const auto innerIndices =
-        getFrameIndices(inner->getDelays().data(), inner->getFrameCount(), args.delay, args.frameCount);
+        getFrameIndices(inner->getDelays(), args.delay, args.frameCount);
     const auto coverIndices =
-        getFrameIndices(cover->getDelays().data(), cover->getFrameCount(), args.delay, args.frameCount);
+        getFrameIndices(cover->getDelays(), args.delay, args.frameCount);
 
     GeneralLogger::info("Generating frames...");
     uint8_t** innerFramesCache = new uint8_t* [inner->getFrameCount()] {

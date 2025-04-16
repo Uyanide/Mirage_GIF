@@ -1,6 +1,6 @@
 *.vscode
 *__pycache__
-*build
+*build*
 *cmake-build-*
 *output*
 memo
@@ -8,3 +8,4 @@ memo
 *temp*
 *.idea
 whatever
+.cache

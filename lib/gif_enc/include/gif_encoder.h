@@ -13,8 +13,6 @@
 namespace GIFEnc {
 class GIFEncoder {
   public:
-    GIFEncoder() { m_finished = true; }
-
     GIFEncoder(const std::string& outPath,
                uint32_t width,
                uint32_t height,

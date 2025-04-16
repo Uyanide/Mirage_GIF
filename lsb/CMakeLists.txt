@@ -44,7 +44,7 @@ target_link_directories(GIFLsb-enc PRIVATE
 )
 
 target_link_libraries(GIFLsb-enc PRIVATE
-    gif_enc
+    naive_gif
     image_sequence)
 
 target_include_directories(GIFLsb-enc PRIVATE
@@ -54,11 +54,11 @@ target_include_directories(GIFLsb-enc PRIVATE
     ${LIB_DIR}/image_sequence/include
 )
 
-target_compile_options(GIFLsb-enc PRIVATE ${TARGET_COMPILE_OPTIONS})
+target_compile_options(GIFLsb-enc PRIVATE ${GLOBAL_COMPILE_OPTIONS})
 
-target_link_options(GIFLsb-enc PRIVATE ${TARGET_LINK_OPTIONS})
+target_link_options(GIFLsb-enc PRIVATE ${GLOBAL_LINK_OPTIONS})
 
-target_compile_definitions(GIFLsb-enc PRIVATE ${TARGET_COMPILE_DEFINITIONS})
+target_compile_definitions(GIFLsb-enc PRIVATE ${GLOBAL_COMPILE_DEFINITIONS})
 
 add_executable(GIFLsb-dec
     ${CMAKE_CURRENT_LIST_DIR}/src/gif_lsb_dec.cpp
@@ -78,8 +78,8 @@ target_include_directories(GIFLsb-dec PRIVATE
     ${LIB_DIR}/image_sequence/include
 )
 
-target_compile_options(GIFLsb-dec PRIVATE ${TARGET_COMPILE_OPTIONS})
+target_compile_options(GIFLsb-dec PRIVATE ${GLOBAL_COMPILE_OPTIONS})
 
-target_link_options(GIFLsb-dec PRIVATE ${TARGET_LINK_OPTIONS})
+target_link_options(GIFLsb-dec PRIVATE ${GLOBAL_LINK_OPTIONS})
 
-target_compile_definitions(GIFLsb-dec PRIVATE ${TARGET_COMPILE_DEFINITIONS})
+target_compile_definitions(GIFLsb-dec PRIVATE ${GLOBAL_COMPILE_DEFINITIONS})
