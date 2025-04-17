@@ -57,13 +57,13 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         //
         ("t,transparency", "Use transparency.")
         //
-        ("l,local_palette", "Use local palette. If enabled, each frame will have its own palette.")
-        //
-        ("s,single", "Generate a single frame GIF. The output will be compatible with other LSB decoders.")
-        //
         ("a,threshold",
          "Transparency threshold (0-255), pixels with a alpha value below this will be set transparent.",
          cxxopts::value<uint32_t>()->default_value(std::to_string(Defaults::TRANSPARENT_THRESHOLD)))
+        //
+        ("l,local_palette", "Use local palette. If enabled, each frame will have its own palette.")
+        //
+        ("s,single", "Generate a single frame GIF. The output will be compatible with other LSB decoders.")
         //
         ("p,threads",
          "Number of threads to use for processing, 0 means auto-detect.",
@@ -71,7 +71,7 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         //
         ("h,help", "Show help message");
 
-    options.positional_help("<image> <file>").show_positional_help();
+    options.positional_help("<image> <encrypt-file>");
     options.parse_positional({"image", "file"});
 
     try {

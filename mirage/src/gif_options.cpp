@@ -18,7 +18,8 @@ getThreadCount() {
 
 class OptionInvalidException final : public std::exception {
   public:
-    explicit OptionInvalidException(const std::string&& msg) : msg(msg) {}
+    explicit OptionInvalidException(const std::string&& msg)
+        : msg(msg) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -69,7 +70,7 @@ Options::parseArgs(int argc, char** argv) noexcept {
         //
         ("h,help", "Show help message");
 
-    options.positional_help("inner cover");
+    options.positional_help("<inner-image> <cover-image>");
     options.parse_positional({"inner", "cover"});
 
     try {
