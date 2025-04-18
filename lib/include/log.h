@@ -1,13 +1,10 @@
 #ifndef GENERAL_LOGGER_H
 #define GENERAL_LOGGER_H
 
+#include <cstdint>
 #include <iostream>
-#include <mutex>
-
-#include "def.h"
 
 namespace GeneralLogger {
-static std::mutex logMutex;
 
 static constexpr const char* colorInfoMsg[]{"\033[32m", "\033[0m", "\033[0m"};
 
@@ -22,7 +19,6 @@ info(const std::string_view& msg,
      const LogIndent indent  = GENERAL,
      const bool color        = true,
      std::ostream* logStream = &std::cerr) {
-    std::lock_guard<std::mutex> lock(logMutex);
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[92m" : "") << "[INFO] ";
@@ -35,7 +31,6 @@ warn(const std::string_view& msg,
      const LogIndent indent  = GENERAL,
      const bool color        = true,
      std::ostream* logStream = &std::cerr) {
-    std::lock_guard<std::mutex> lock(logMutex);
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[93m" : "") << "[WARN] ";
@@ -48,7 +43,6 @@ error(const std::string_view& msg,
       const LogIndent indent  = GENERAL,
       const bool color        = true,
       std::ostream* logStream = &std::cerr) {
-    std::lock_guard<std::mutex> lock(logMutex);
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[91m" : "") << "[ERROR] ";

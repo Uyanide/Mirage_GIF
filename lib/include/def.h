@@ -57,6 +57,8 @@ static_assert(sizeof(PixelBGRA) == 4, "PixelBGRA size is not 4 bytes!");
 #pragma pack(pop)
 #endif  // _MSC_VER
 
+#include <functional>
+
 struct PixelBRAGHash {
     std::size_t
     operator()(const PixelBGRA& pixel) const {
