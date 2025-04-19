@@ -16,7 +16,7 @@ class ImageSequenceStreamImpl : public ImageSequenceStream {
 
     ~ImageSequenceStreamImpl() override = default;
 
-    FrameRef
+    Frame::Ref
     getNextFrame() noexcept override;
 
     [[nodiscard]] bool
