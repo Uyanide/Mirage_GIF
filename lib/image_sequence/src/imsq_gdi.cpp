@@ -12,10 +12,10 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "file_utils.h"
 #include "gdi_initializer.h"
 #include "imsq.h"
 #include "log.h"
-#include "path.h"
 
 using std::string, std::vector, std::wstring;
 

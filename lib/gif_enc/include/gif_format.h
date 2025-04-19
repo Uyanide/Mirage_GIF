@@ -1,6 +1,7 @@
 #ifndef GIF_FORMAT_H
 #define GIF_FORMAT_H
 
+#include <span>
 #include <string>
 #include <vector>
 
@@ -33,7 +34,7 @@ gifFrameHeader(uint32_t width,
 std::vector<uint8_t>
 gifApplicationExtension(const std::string &identifier,
                         const std::string &authentication,
-                        const std::vector<uint8_t> &data) noexcept;
+                        const std::span<const uint8_t> &data) noexcept;
 };  // namespace GIFEnc
 
 #endif  // GIF_FORMAT_H

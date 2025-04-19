@@ -1,13 +1,11 @@
-#include <filesystem>
-#include <fstream>
 #include <functional>
 #include <string>
 #include <vector>
 
+#include "file_utils.h"
 #include "gif_lsb.h"
 #include "imsq_stream.h"
 #include "log.h"
-#include "path.h"
 
 using namespace GIFImage;
 using namespace GIFLsb;
@@ -152,23 +150,18 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
         GeneralLogger::info("MIME type: " + headerData.mimeType, GeneralLogger::STEP);
 
         GeneralLogger::info("Decoding frames...");
-        std::ofstream outFile;
-        std::filesystem::path outputPath;
-        if (!headerData.fileName.empty() && args.outputFile.empty()) {
-            outputPath = std::filesystem::path(localizePath(args.outputDirectory + headerData.fileName));
-        } else if (!args.outputFile.empty()) {
-            outputPath = std::filesystem::path(localizePath(args.outputDirectory + args.outputFile))
-                             .replace_extension(getExtName(headerData.fileName));
+        // std::filesystem::path outputPath;
+        string fileName;
+        if (!headerData.fileName.empty() && args.outputName.empty()) {
+            // outputPath = std::filesystem::path(NaiveIO::localizePath(args.outputDirectory + headerData.fileName));
+            fileName = headerData.fileName;
+        } else if (!args.outputName.empty()) {
+            fileName = NaiveIO::replaceExtName(args.outputName, NaiveIO::getExtName(headerData.fileName));
         } else {
-            outputPath = std::filesystem::path(
-                localizePath(args.outputDirectory + "decrypted" + getExtName(headerData.fileName)));
+            fileName = "decrypted_" +
+                       std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) +
+                       NaiveIO::getExtName(headerData.fileName);
         }
-        outFile.open(outputPath, std::ios::binary);
-        if (!outFile.is_open()) {
-            GeneralLogger::error("Failed to open output file: " + outputPath.string());
-            return false;
-        }
-        outFile.exceptions(std::ios::failbit | std::ios::badbit);
 
         vector<uint8_t> buffer(WRITE_BUFFER_SIZE);
         size_t bufferPos    = 0;
@@ -178,7 +171,7 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
             const uint8_t byte  = popByte();
             buffer[bufferPos++] = byte;
             if (bufferPos >= WRITE_BUFFER_SIZE) {
-                outFile.write(reinterpret_cast<const char*>(buffer.data()), bufferPos);
+                args.outputFile->write(buffer);
                 wroteSize += bufferPos;
                 bufferPos             = 0;
                 const double progress = static_cast<double>(wroteSize) / headerData.fileSize;
@@ -191,14 +184,17 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
             }
         }
         if (bufferPos > 0) {
-            outFile.write(reinterpret_cast<const char*>(buffer.data()), bufferPos);
+            args.outputFile->write({buffer.data(), bufferPos});
         }
-        outFile.close();
+        args.outputFile->close();
         if (lastProgress < 1.0) {
             GeneralLogger::info("Progress: 100.00%", GeneralLogger::DETAIL);
         }
+        if (!args.outputFile->rename(fileName)) {
+            throw DecodingException("Failed to rename output file.");
+        }
         GeneralLogger::info("Decoding completed successfully.");
-        GeneralLogger::info("Output file: " + deLocalizePath(outputPath.string()));
+        GeneralLogger::info("Output file: " + args.outputFile->getFilePath());
         return true;
     } catch (const EOFException&) {
         GeneralLogger::error("End of file reached before decoding completed.");

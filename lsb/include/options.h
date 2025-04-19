@@ -6,6 +6,7 @@
 #include <string>
 
 #include "file_reader.h"
+#include "file_writer.h"
 #include "imsq.h"
 #include "imsq_stream.h"
 
@@ -15,8 +16,10 @@ class DecodeOptions {
   public:
     GIFImage::ImageSequenceStream::Ref image;
     std::string imagePath;
-    std::string outputFile;
+    NaiveIO::FileWriter::Ref outputFile;
+    std::string outputName;
     std::string outputDirectory;  // ends with '/'
+    std::string tempFileName;
 
   public:
     static std::optional<DecodeOptions>
@@ -43,7 +46,8 @@ class EncodeOptions {
 
   public:
     GIFImage::ImageSequence::Ref image;
-    GIFLsb::FileReader::Ref file;
+    NaiveIO::FileReader::Ref file;
+    NaiveIO::FileWriter::Ref outputFile;
     std::string imagePath;
     std::string filePath;
     std::string markText;
@@ -52,7 +56,7 @@ class EncodeOptions {
     bool grayscale                = false;
     bool enableLocalPalette       = false;
     bool singleFrame              = false;
-    std::string outputFile        = Defaults::OUTPUT_FILE;
+    std::string outputPath        = Defaults::OUTPUT_FILE;
     uint32_t numColors            = Defaults::NUM_COLORS;
     uint32_t transparentThreshold = Defaults::TRANSPARENT_THRESHOLD;
     uint32_t threadCount          = Defaults::THREAD_COUNT;

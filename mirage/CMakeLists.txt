@@ -26,6 +26,11 @@ if(NOT IMAGE_SEQUENCE_BUILT)
     set(IMAGE_SEQUENCE_BUILT TRUE)
 endif()
 
+if(NOT FILE_IO_BUILT)
+    add_subdirectory(${LIB_DIR}/file_io ${CMAKE_BINARY_DIR}/lib_file_io)
+    set(FILE_IO_BUILT TRUE)
+endif()
+
 if(NOT EXECUTABLE_OUTPUT_PATH)
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/../bin)
 endif()
@@ -39,16 +44,19 @@ add_executable(GIFMirage
 target_link_directories(GIFMirage PRIVATE
     ${CMAKE_BINARY_DIR}/lib_gif_enc
     ${CMAKE_BINARY_DIR}/image_sequence
+    ${CMAKE_BINARY_DIR}/lib_file_io
 )
 
 target_link_libraries(GIFMirage PRIVATE
     naive_gif
+    naive_file_io
     image_sequence)
 
 target_include_directories(GIFMirage PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${LIB_DIR}/gif_enc/include
     ${LIB_DIR}/image_sequence/include
+    ${LIB_DIR}/file_io/include
     ${LIB_DIR}/include
 )
 

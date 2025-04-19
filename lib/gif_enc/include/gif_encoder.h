@@ -1,19 +1,19 @@
 #ifndef GIF_ENCODER_H
 #define GIF_ENCODER_H
 
-#include <filesystem>
-#include <fstream>
+#include <functional>
 #include <span>
 #include <string>
 #include <vector>
 
 #include "def.h"
-#include "path.h"
 
 namespace GIFEnc {
 class GIFEncoder {
   public:
-    GIFEncoder(const std::string& outPath,
+    using WriteChunkCallback = std::function<bool(const std::span<const uint8_t>&)>;
+
+    GIFEncoder(const WriteChunkCallback& writeChunkCallback,
                uint32_t width,
                uint32_t height,
                uint32_t backgroundIndex,
@@ -36,7 +36,7 @@ class GIFEncoder {
      *                      If empty, the global color table will be used.
      */
     void
-    addFrame(const std::span<uint8_t>& frame,
+    addFrame(const std::span<const uint8_t>& frame,
              uint32_t delay,
              uint32_t disposalMethod,
              uint32_t minCodeLength                = 0,
@@ -53,7 +53,7 @@ class GIFEncoder {
      *                      If empty, the global color table will be used.
      */
     void
-    addFrameCompressed(const std::span<uint8_t>& frame,
+    addFrameCompressed(const std::span<const uint8_t>& frame,
                        uint32_t delay,
                        uint32_t disposalMethod,
                        uint32_t minCodeLength                = 0,
@@ -68,7 +68,7 @@ class GIFEncoder {
     void
     addApplicationExtension(const std::string& identifier,
                             const std::string& authentication,
-                            const std::vector<uint8_t>& data);
+                            const std::span<const uint8_t>& data);
 
     bool
     finish();
@@ -76,21 +76,15 @@ class GIFEncoder {
     void
     deleteFile();
 
-    inline std::string
-    getFileName() const {
-        return deLocalizePath(m_outPath);
-    }
-
   private:
     void
-    writeFile(const std::span<uint8_t>& data);
+    writeFile(const std::span<const uint8_t>& data);
 
     void
     writeFile(uint8_t byte);
 
   private:
-    std::ofstream m_file;
-    std::filesystem::path m_outPath;
+    WriteChunkCallback m_writeChunkCallback;
     uint32_t m_width            = 0;
     uint32_t m_height           = 0;
     uint32_t m_minCodeLength    = 0;

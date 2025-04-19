@@ -21,7 +21,7 @@ class LZWDecompressImpl {
     ~LZWDecompressImpl();
 
     void
-    process(const span<uint8_t>& data);
+    process(const span<const uint8_t>& data);
     size_t
     finish();
 
@@ -96,7 +96,7 @@ LZWDecompressImpl::_reset() {
 }
 
 void
-LZWDecompressImpl::process(const span<uint8_t>& data) {
+LZWDecompressImpl::process(const span<const uint8_t>& data) {
     if (m_finished) {
         return;
     }
@@ -188,7 +188,7 @@ LZWDecompressImpl::_writeCode(uint16_t code) {
     if (m_result.size() >= m_writeChunkSize) {
         uint8_t *const l = m_result.data(), *const r = l + m_result.size(), *pos = l;
         for (; r - pos >= 0 && static_cast<size_t>(r - pos) >= m_writeChunkSize; pos += m_writeChunkSize) {
-            m_write(span<uint8_t>(pos, m_writeChunkSize));
+            m_write(span<const uint8_t>(pos, m_writeChunkSize));
             m_resultTotalSize += m_writeChunkSize;
         }
         m_result.erase(m_result.begin(), m_result.begin() + (pos - l));
@@ -205,7 +205,7 @@ LZWDecompressImpl::_appendResult(uint8_t data) {
 void
 LZWDecompressImpl::_flushResult(size_t maxSize) {
     if (m_result.size() >= maxSize) {
-        m_write(span<uint8_t>(m_result.data(), m_result.size()));
+        m_write(span<const uint8_t>(m_result.data(), m_result.size()));
         m_resultTotalSize += m_result.size();
         m_result.clear();
     }
@@ -244,12 +244,12 @@ GIFEnc::LZW::decompressStream(const ReadCallback& read,
 }
 
 vector<uint8_t>
-GIFEnc::LZW::decompress(const span<uint8_t>& data, const uint32_t minCodeSize) noexcept {
+GIFEnc::LZW::decompress(const span<const uint8_t>& data, const uint32_t minCodeSize) noexcept {
     if (minCodeSize < 2) {
         return {};
     }
     vector<uint8_t> out;
-    auto decoder = LZWDecompressImpl([&out](const span<uint8_t>& data) { out.insert(out.end(), data.begin(), data.end()); },
+    auto decoder = LZWDecompressImpl([&out](const span<const uint8_t>& data) { out.insert(out.end(), data.begin(), data.end()); },
                                      [&out]() { out.clear(); },
                                      minCodeSize,
                                      WRITE_DEFAULT_CHUNK_SIZE);

@@ -40,7 +40,7 @@ Options::parseArgs(int argc, char** argv) noexcept {
         //
         ("cover", "Cover image file", cxxopts::value<string>())
         //
-        ("o,output", "Output GIF file.", cxxopts::value<string>()->default_value(Defaults::outputFile))
+        ("o,output", "Output GIF file.", cxxopts::value<string>()->default_value(Defaults::outputPath))
         //
         ("x,width",
          "Width of the generated GIF. Max: " + std::to_string(Limits::width),
@@ -96,7 +96,8 @@ Options::parseArgs(int argc, char** argv) noexcept {
         gifOptions.coverPath      = result["cover"].as<string>();
         gifOptions.innerImage     = GIFImage::ImageSequence::read(result["inner"].as<string>());
         gifOptions.coverImage     = GIFImage::ImageSequence::read(result["cover"].as<string>());
-        gifOptions.outputFile     = result["output"].as<string>();
+        gifOptions.outputPath     = result["output"].as<string>();
+        gifOptions.outputFile     = NaiveIO::FileWriter::create(gifOptions.outputPath, ".gif");
         gifOptions.width          = result["width"].as<uint32_t>();
         gifOptions.height         = result["height"].as<uint32_t>();
         gifOptions.frameCount     = result["frames"].as<uint32_t>();
@@ -134,13 +135,13 @@ Options::parseArgs(int argc, char** argv) noexcept {
 void
 Options::ensureValid() const {
     if (!innerImage) {
-        throw OptionInvalidException("Inner image is required.");
+        throw OptionInvalidException("Invalid inner image.");
     }
     if (!coverImage) {
-        throw OptionInvalidException("Cover image is required.");
+        throw OptionInvalidException("Invalid cover image.");
     }
-    if (outputFile.empty()) {
-        throw OptionInvalidException("Output file is required.");
+    if (!outputFile) {
+        throw OptionInvalidException("Invalid output path.");
     }
     if (width == 0 || height == 0) {
         throw OptionInvalidException("Width and height must be positive integers.");

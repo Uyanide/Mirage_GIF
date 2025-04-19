@@ -1,5 +1,5 @@
-#ifndef FILE_READER_H
-#define FILE_READER_H
+#ifndef NAIVEIO_FILE_READER_H
+#define NAIVEIO_FILE_READER_H
 
 #include <cstddef>
 #include <cstdint>
@@ -7,7 +7,7 @@
 #include <span>
 #include <string>
 
-namespace GIFLsb {
+namespace NaiveIO {
 
 class FileReaderException final : public std::exception {
   public:
@@ -45,9 +45,9 @@ class FileReader {
     getSize() = 0;
 
     virtual size_t
-    read(std::span<uint8_t> buffer) = 0;
+    read(std::span<uint8_t>& buffer) = 0;
 };
 
-};  // namespace GIFLsb
+};  // namespace NaiveIO
 
-#endif  // FILE_READER_H
+#endif  // NAIVEIO_FILE_READER_H

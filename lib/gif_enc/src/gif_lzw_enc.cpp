@@ -18,7 +18,7 @@ class LZWCompressImpl {
     ~LZWCompressImpl();
 
     void
-    process(const span<uint8_t>& input);
+    process(const span<const uint8_t>& input);
     size_t
     finish();
 
@@ -75,7 +75,7 @@ LZWCompressImpl::~LZWCompressImpl() {
 }
 
 void
-LZWCompressImpl::process(const span<uint8_t>& input) {
+LZWCompressImpl::process(const span<const uint8_t>& input) {
     if (m_isFinished) {
         return;
     }
@@ -190,12 +190,12 @@ GIFEnc::LZW::compressStream(const ReadCallback& read,
 }
 
 vector<uint8_t>
-GIFEnc::LZW::compress(const span<uint8_t>& data, uint32_t minCodeSize) noexcept {
+GIFEnc::LZW::compress(const span<const uint8_t>& data, uint32_t minCodeSize) noexcept {
     if (minCodeSize < 2) {
         return {};
     }
     vector<uint8_t> out;
-    auto encoder = LZWCompressImpl([&out](const span<uint8_t>& data) { out.insert(out.end(), data.begin(), data.end()); },
+    auto encoder = LZWCompressImpl([&out](const span<const uint8_t>& data) { out.insert(out.end(), data.begin(), data.end()); },
                                    [&out]() { out.clear(); },
                                    minCodeSize,
                                    GIFEnc::LZW::WRITE_DEFAULT_CHUNK_SIZE);

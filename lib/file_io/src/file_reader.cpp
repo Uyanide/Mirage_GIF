@@ -4,11 +4,11 @@
 #include <filesystem>
 #include <fstream>
 
+#include "file_utils.h"
 #include "log.h"
-#include "path.h"
 using std::string, std::span;
 
-using namespace GIFLsb;
+using namespace NaiveIO;
 
 class FileReaderImpl final : public FileReader {
   public:
@@ -64,7 +64,7 @@ class FileReaderImpl final : public FileReader {
     }
 
     size_t
-    read(std::span<uint8_t> buffer) override {
+    read(std::span<uint8_t>& buffer) override {
         if (!isOpen()) {
             throw FileReaderException("File is not open.");
         }

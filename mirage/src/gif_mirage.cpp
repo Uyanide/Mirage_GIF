@@ -2,8 +2,10 @@
 
 #include <array>
 #include <cmath>
+#include <exception>
 #include <functional>
 #include <mutex>
+#include <span>
 #include <string>
 #include <thread>
 #include <vector>
@@ -16,7 +18,7 @@
 #include "imsq.h"
 #include "log.h"
 
-using std::vector, std::string, std::array;
+using std::vector, std::string, std::array, std::span;
 
 using IsCoverFunc = std::function<bool(uint32_t x, uint32_t y)>;
 
@@ -66,7 +68,7 @@ getFrameIndices(const vector<uint32_t>& delays, const uint32_t targetDelay, cons
 bool
 GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
     GeneralLogger::info("Starting GIF mirage encoding...");
-    GeneralLogger::info("Output file: " + args.outputFile, GeneralLogger::STEP);
+    GeneralLogger::info("Output file: " + args.outputFile->getFilePath(), GeneralLogger::STEP);
     GeneralLogger::info("Width: " + std::to_string(args.width), GeneralLogger::STEP);
     GeneralLogger::info("Height: " + std::to_string(args.height), GeneralLogger::STEP);
     GeneralLogger::info("Number of frames: " + std::to_string(args.frameCount), GeneralLogger::STEP);
@@ -181,7 +183,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
                     vector<uint8_t> outData;
                     bool isFirst              = true;
                     const auto compressedSize = GIFEnc::LZW::compressStream(
-                        [&merged, &isFirst]() -> std::span<uint8_t> {
+                        [&merged, &isFirst]() -> std::span<const uint8_t> {
                             if (isFirst) {
                                 isFirst = false;
                                 return {merged.data(), merged.size()};
@@ -189,7 +191,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
                                 return {};
                             }
                         },
-                        [&outData](const std::span<uint8_t>& data) {
+                        [&outData](const std::span<const uint8_t>& data) {
                             if (data.empty()) return;
                             outData.push_back(data.size());
                             outData.insert(outData.end(), data.begin(), data.end());
@@ -236,16 +238,29 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
 
     GIFEnc::GIFEncoder* encoder = nullptr;
     try {
-        encoder = new GIFEnc::GIFEncoder(args.outputFile,
-                                         args.width,
-                                         args.height,
-                                         TRANSPARENT_INDEX,
-                                         MIN_CODE_LENGTH,
-                                         true,
-                                         TRANSPARENT_INDEX,
-                                         0,
-                                         true,
-                                         GCT);
+        encoder = new GIFEnc::GIFEncoder(
+            [&args](const span<const uint8_t> data) -> bool {
+                try {
+                    if (args.outputFile->write(data) != data.size()) {
+                        return false;
+                    }
+                    return true;
+                } catch (std::exception& e) {
+                    GeneralLogger::error(std::string("Failed to write GIF file: ") + e.what());
+                } catch (...) {
+                    GeneralLogger::error("Failed to write GIF file: unknown error");
+                }
+                return false;
+            },
+            args.width,
+            args.height,
+            TRANSPARENT_INDEX,
+            MIN_CODE_LENGTH,
+            true,
+            TRANSPARENT_INDEX,
+            0,
+            true,
+            GCT);
 
         for (uint32_t i = 0; i < args.frameCount; ++i) {
             if (outFrames[i].empty()) continue;
@@ -256,7 +271,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
             delete encoder;
             return false;
         }
-        GeneralLogger::info("Output file: " + encoder->getFileName());
+        GeneralLogger::info("Output file: " + args.outputFile->getFilePath());
         delete encoder;
         return true;
     } catch (const std::exception& e) {

@@ -1,6 +1,5 @@
 #include "gif_encoder.h"
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -8,7 +7,6 @@
 #include "gif_exception.h"
 #include "gif_format.h"
 #include "gif_lzw.h"
-#include "path.h"
 using std::vector, std::span, std::string;
 
 static bool
@@ -23,7 +21,7 @@ checkCodeLengthValid(uint32_t minCodeLength, size_t paletteSize) {
 }
 
 static bool
-checkIndexesValid(const std::span<uint8_t>& codes, uint32_t minCodeLength, size_t paletteSize) {
+checkIndexesValid(const std::span<const uint8_t>& codes, size_t paletteSize) {
     const auto maxIndex = paletteSize - 1;
     for (const auto& code : codes) {
         if (code > maxIndex) {
@@ -33,7 +31,7 @@ checkIndexesValid(const std::span<uint8_t>& codes, uint32_t minCodeLength, size_
     return true;
 }
 
-GIFEnc::GIFEncoder::GIFEncoder(const string& outPath,
+GIFEnc::GIFEncoder::GIFEncoder(const WriteChunkCallback& writeChunkCallback,
                                const uint32_t width,
                                const uint32_t height,
                                const uint32_t backgroundIndex,
@@ -43,7 +41,8 @@ GIFEnc::GIFEncoder::GIFEncoder(const string& outPath,
                                const uint32_t loops,
                                const bool hasGlobalColorTable,
                                const vector<PixelBGRA>& globalColorTable)
-    : m_width(width),
+    : m_writeChunkCallback(writeChunkCallback),
+      m_width(width),
       m_height(height),
       m_minCodeLength(minCodeLength),
       m_hasTransparency(hasTransparency),
@@ -61,13 +60,6 @@ GIFEnc::GIFEncoder::GIFEncoder(const string& outPath,
     if (hasTransparency && (transparentIndex >= globalColorTable.size())) {
         throw GIFEnc::GIFEncodeException("Transparent index out of range");
     }
-    m_outPath = std::filesystem::path(localizePath(outPath)).replace_extension(".gif");
-    m_file.open(m_outPath, std::ios::binary);
-    if (!m_file || !m_file.is_open()) {
-        m_finished = true;
-        throw GIFEnc::GIFEncodeException("Failed to open output file");
-    }
-    m_file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     auto header = GIFEnc::gifHeader(
         m_width,
         m_height,
@@ -78,8 +70,6 @@ GIFEnc::GIFEncoder::GIFEncoder(const string& outPath,
         m_globalColorTable);
     if (header.empty()) {
         m_finished = true;
-        m_file.close();
-        deleteFile();
         throw GIFEnc::GIFEncodeException("Header generation failed");
     }
     writeFile(header);
@@ -93,7 +83,7 @@ GIFEnc::GIFEncoder::~GIFEncoder() {
 
 void
 GIFEnc::GIFEncoder::addFrame(
-    const span<uint8_t>& frame,
+    const span<const uint8_t>& frame,
     uint32_t delay,
     uint32_t disposalMethod,
     uint32_t minCodeLength,
@@ -122,7 +112,7 @@ GIFEnc::GIFEncoder::addFrame(
             if (!checkCodeLengthValid(mcl, palette.size())) {
                 throw GIFEnc::GIFEncodeException("Color table size mismatch");
             }
-            if (!checkIndexesValid(frame, mcl, palette.size())) {
+            if (!checkIndexesValid(frame, palette.size())) {
                 throw GIFEnc::GIFEncodeException("Color index out of range");
             }
             pal = &palette;
@@ -146,7 +136,7 @@ GIFEnc::GIFEncoder::addFrame(
 
     bool isFirst          = true;
     const auto compressed = GIFEnc::LZW::compressStream(
-        [&frame, &isFirst]() -> span<uint8_t> {
+        [&frame, &isFirst]() -> span<const uint8_t> {
             if (isFirst) {
                 isFirst = false;
                 return {frame.data(), frame.size()};
@@ -154,7 +144,7 @@ GIFEnc::GIFEncoder::addFrame(
                 return {};
             }
         },
-        [&buffer](const span<uint8_t>& data) {
+        [&buffer](const span<const uint8_t>& data) {
             if (data.empty()) return;
             buffer.push_back(data.size());
             buffer.insert(buffer.end(), data.begin(), data.end());
@@ -172,7 +162,7 @@ GIFEnc::GIFEncoder::addFrame(
 
 void
 GIFEnc::GIFEncoder::addFrameCompressed(
-    const span<uint8_t>& frame,
+    const span<const uint8_t>& frame,
     uint32_t delay,
     uint32_t disposalMethod,
     uint32_t minCodeLength,
@@ -198,7 +188,7 @@ GIFEnc::GIFEncoder::addFrameCompressed(
             if (!checkCodeLengthValid(mcl, palette.size())) {
                 throw GIFEnc::GIFEncodeException("Color table size mismatch");
             }
-            if (!checkIndexesValid(frame, mcl, palette.size())) {
+            if (!checkIndexesValid(frame, palette.size())) {
                 throw GIFEnc::GIFEncodeException("Color index out of range");
             }
             pal = &palette;
@@ -230,7 +220,7 @@ GIFEnc::GIFEncoder::addFrameCompressed(
 void
 GIFEnc::GIFEncoder::addApplicationExtension(const string& identifier,
                                             const string& authentication,
-                                            const vector<uint8_t>& data) {
+                                            const span<const uint8_t>& data) {
     if (m_finished) {
         return;
     }
@@ -247,43 +237,24 @@ GIFEnc::GIFEncoder::finish() {
         return false;
     }
     writeFile(GIFEnc::GIF_END);
-    m_file.close();
     m_finished = true;
     return true;
 }
 
 void
-GIFEnc::GIFEncoder::writeFile(const span<uint8_t>& data) {
+GIFEnc::GIFEncoder::writeFile(const span<const uint8_t>& data) {
     if (m_finished) return;
-    try {
-        m_file.write(reinterpret_cast<const char*>(data.data()), data.size());
-    } catch (const std::ios_base::failure&) {
+    if (!m_writeChunkCallback(data)) {
         m_finished = true;
-        m_file.close();
-        deleteFile();
         throw GIFEnc::GIFEncodeException("Failed to write");
     }
 }
 
 void
-GIFEnc::GIFEncoder::writeFile(uint8_t byte) {
+GIFEnc::GIFEncoder::writeFile(const uint8_t byte) {
     if (m_finished) return;
-    try {
-        m_file.write(reinterpret_cast<const char*>(&byte), 1);
-    } catch (const std::ios_base::failure&) {
+    if (!m_writeChunkCallback({&byte, 1})) {
         m_finished = true;
-        m_file.close();
-        deleteFile();
         throw GIFEnc::GIFEncodeException("Failed to write");
-    }
-}
-
-void
-GIFEnc::GIFEncoder::deleteFile() {
-    if (m_file.is_open()) {
-        m_file.close();
-    }
-    if (std::filesystem::exists(m_outPath)) {
-        std::filesystem::remove(m_outPath);
     }
 }

@@ -1,5 +1,5 @@
-#ifndef GIF_HIDE_PIC_PATH_H
-#define GIF_HIDE_PIC_PATH_H
+#ifndef NAIVEIO_FILE_UTILS_H
+#define NAIVEIO_FILE_UTILS_H
 
 #include <filesystem>
 #include <string>
@@ -7,6 +7,11 @@
 #ifdef _WIN32
 
 #include <windows.h>
+#endif
+
+namespace NaiveIO {
+
+#ifdef _WIN32
 
 inline std::wstring
 localizePath(const std::string& str) {
@@ -73,9 +78,29 @@ getFileName(const std::string& str) {
     return str.substr(pos + 1);
 }
 
+inline std::string
+replaceExtName(const std::string& str, const std::string& extName) {
+    if (extName.empty()) {
+        return str;
+    }
+    std::string ext;
+    if (extName[0] != '.') {
+        ext = '.' + extName;
+    } else {
+        ext = extName;
+    }
+    auto pos = str.find_last_of('.');
+    if (pos == std::string::npos) {
+        return str + ext;
+    }
+    return str.substr(0, pos) + ext;
+}
+
 inline bool
 isValidFileName(const std::string& str) {
     return !str.empty() && str.find_first_of("\\/:*?\"<>|") == std::string::npos;
 }
 
-#endif  // GIF_HIDE_PIC_PATH_H
+}  // namespace NaiveIO
+
+#endif  // NAIVEIO_FILE_UTILS_H

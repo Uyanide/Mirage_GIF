@@ -9,13 +9,13 @@
 
 #include "MimeTypes.h"
 #include "file_reader.h"
+#include "file_utils.h"
 #include "gif_encoder.h"
 #include "gif_exception.h"
 #include "gif_lsb.h"
 #include "imsq.h"
 #include "log.h"
 #include "mark.h"
-#include "path.h"
 #include "quantizer.h"
 
 using std::string, std::vector;
@@ -277,9 +277,9 @@ genPalettes(GetPaletteFunc& getPalette,
 
 class LsbFileReader {
   public:
-    LsbFileReader(const FileReader::Ref& fileReader, const string& filePath, const uint32_t lsbLevel)
+    LsbFileReader(const NaiveIO::FileReader::Ref& fileReader, const string& filePath, const uint32_t lsbLevel)
         : m_bitsPerPixel(lsbLevel * 3), m_file(fileReader), m_buffer(READ_CHUNK_SIZE) {
-        m_fileName = getFileName(filePath);
+        m_fileName = NaiveIO::getFileName(filePath);
         m_fileSize = m_file->getSize();
         setHeader();
     }
@@ -347,7 +347,7 @@ class LsbFileReader {
             *(header.end() - 1) = 0;
         }
         // const auto mimeP = MimeTypes::getType(extName.c_str());
-        const auto mimeP = MimeTypes::getType(getExtName(m_fileName.c_str()).c_str());
+        const auto mimeP = MimeTypes::getType(NaiveIO::getExtName(m_fileName.c_str()).c_str());
         string mimeType  = mimeP ? string(mimeP) : "application/octet-stream";
         header.insert(header.end(), mimeType.begin(), mimeType.end());
         header.push_back(0);
@@ -371,8 +371,9 @@ class LsbFileReader {
             m_bufferPos = m_bufferSize = 0;
             return false;
         }
-        m_isHeader   = false;
-        m_bufferSize = m_file->read({m_buffer.data(), READ_CHUNK_SIZE});
+        m_isHeader = false;
+        std::span<uint8_t> chunk(m_buffer.data(), m_buffer.size());
+        m_bufferSize = m_file->read(chunk);
         m_bufferPos  = 0;
         return m_bufferSize > 0;
     }
@@ -380,7 +381,7 @@ class LsbFileReader {
     uint32_t m_bitsPerPixel = 0;
 
     string m_fileName;
-    const FileReader::Ref& m_file;
+    const NaiveIO::FileReader::Ref& m_file;
     size_t m_fileSize   = 0;
     size_t m_headerSize = 0;
     size_t m_chunksRead = 0;
@@ -403,7 +404,7 @@ getRequiredSize(const uint32_t lsbLevel, const size_t fileDataSize) {
 bool
 GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
     GeneralLogger::info("Starting GIF LSB encoding...");
-    GeneralLogger::info("Output file: " + args.outputFile, GeneralLogger::STEP);
+    GeneralLogger::info("Output file: " + args.outputFile->getFilePath(), GeneralLogger::STEP);
     GeneralLogger::info("Number of colors: " + std::to_string(args.numColors), GeneralLogger::STEP);
     GeneralLogger::info("Disable dither: " + std::to_string(args.disableDither), GeneralLogger::STEP);
     GeneralLogger::info("Transparency: " + std::to_string(args.transparency), GeneralLogger::STEP);
@@ -478,16 +479,29 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
         }
 
         GeneralLogger::info("Initializing GIF encoder...");
-        GIFEncoder encoder(args.outputFile,
-                           width,
-                           height,
-                           (1 << minCodeLength) - 1,
-                           minCodeLength,
-                           args.transparency,
-                           (1 << minCodeLength) - 1,
-                           0,
-                           !args.enableLocalPalette,
-                           args.enableLocalPalette ? vector<PixelBGRA>{} : *getPalette(0));
+        GIFEncoder encoder(
+            [&args](const std::span<const uint8_t> data) -> bool {
+                try {
+                    if (args.outputFile->write(data) != data.size()) {
+                        return false;
+                    }
+                    return true;
+                } catch (std::exception& e) {
+                    GeneralLogger::error(std::string("Failed to write GIF file: ") + e.what());
+                } catch (...) {
+                    GeneralLogger::error("Failed to write GIF file: unknown error");
+                }
+                return false;
+            },
+            width,
+            height,
+            (1 << minCodeLength) - 1,
+            minCodeLength,
+            args.transparency,
+            (1 << minCodeLength) - 1,
+            0,
+            !args.enableLocalPalette,
+            args.enableLocalPalette ? vector<PixelBGRA>{} : *getPalette(0));
 
         GeneralLogger::info("Generating frames...");
         uint32_t frameIndex      = 0;
@@ -546,11 +560,11 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
         }
         GeneralLogger::info("Encoding completed successfully.");
         GeneralLogger::info("Generated frames: " + std::to_string(generatedFrames));
-        GeneralLogger::info("Output file: " + encoder.getFileName());
+        GeneralLogger::info("Output file: " + args.outputFile->getFilePath());
         return true;
     } catch (const GIFEncodeException& e) {
         GeneralLogger::error("Failed encoding GIF: " + string(e.what()));
-    } catch (const FileReaderException& e) {
+    } catch (const NaiveIO::FileReaderException& e) {
         GeneralLogger::error("Failed reading file: " + string(e.what()));
     } catch (const std::exception& e) {
         GeneralLogger::error("Unexpected error: " + string(e.what()));

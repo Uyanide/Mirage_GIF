@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 
+#include "file_writer.h"
 #include "imsq.h"
 
 namespace GIFMirage {
@@ -38,7 +39,7 @@ class Options {
         static constexpr uint32_t frameCount     = 30;
         static constexpr uint32_t delay          = 80;
         static constexpr std::string mergeMode   = "S2W1C";
-        static constexpr const char* outputFile  = "output.gif";
+        static constexpr const char* outputPath  = "output.gif";
         static constexpr uint32_t threadCount    = 0;  // 0 means auto-detect
         static constexpr uint32_t disposalMethod = 3;
     };
@@ -57,7 +58,8 @@ class Options {
     GIFImage::ImageSequence::Ref coverImage;
     std::string innerPath;
     std::string coverPath;
-    std::string outputFile = Defaults::outputFile;
+    NaiveIO::FileWriter::Ref outputFile;
+    std::string outputPath = Defaults::outputPath;
     uint32_t width         = Defaults::width;
     uint32_t height        = Defaults::height;
     uint32_t frameCount    = Defaults::frameCount;

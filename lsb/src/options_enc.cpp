@@ -1,3 +1,4 @@
+#include <string>
 #include <thread>
 
 #include "cxxopts.hpp"
@@ -40,7 +41,7 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         //
         ("file", "File to encrypt", cxxopts::value<string>())
         //
-        ("o,output", "Output GIF file.", cxxopts::value<string>()->default_value(Defaults::OUTPUT_FILE))
+        ("o,output", "Output path of GIF file.", cxxopts::value<string>()->default_value(Defaults::OUTPUT_FILE))
         //
         ("m,mark_text",
          "Marker text to be embedded in the GIF. Set to \"none\" to disable",
@@ -90,8 +91,9 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         gifOptions.imagePath            = result["image"].as<string>();
         gifOptions.image                = GIFImage::ImageSequence::read(gifOptions.imagePath);
         gifOptions.filePath             = result["file"].as<string>();
-        gifOptions.file                 = GIFLsb::FileReader::create(gifOptions.filePath);
-        gifOptions.outputFile           = result["output"].as<string>();
+        gifOptions.file                 = NaiveIO::FileReader::create(gifOptions.filePath);
+        gifOptions.outputPath           = result["output"].as<string>();
+        gifOptions.outputFile           = NaiveIO::FileWriter::create(gifOptions.outputPath, ".gif");
         gifOptions.markText             = result["mark_text"].as<string>();
         gifOptions.disableDither        = result.count("no_dither");
         gifOptions.transparency         = result.count("transparency");
@@ -129,6 +131,9 @@ EncodeOptions::ensureValid() {
     }
     if (!file) {
         throw OptionInvalidException("Invalid file to encrypt.");
+    }
+    if (!outputFile) {
+        throw OptionInvalidException("Invalid output file.");
     }
     if (numColors < Limits::MIN_NUM_COLORS || numColors > Limits::MAX_NUM_COLORS) {
         throw OptionInvalidException("Number of colors must be between " + std::to_string(Limits::MIN_NUM_COLORS) +

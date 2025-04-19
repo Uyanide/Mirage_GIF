@@ -1,8 +1,9 @@
 #include "gif_format.h"
 
+#include <span>
 #include <string>
 #include <vector>
-using std::vector, std::string;
+using std::vector, std::string, std::span;
 
 std::vector<uint8_t>
 GIFEnc::gifHeader(const uint32_t width,
@@ -141,7 +142,7 @@ GIFEnc::gifFrameHeader(uint32_t width,
 vector<uint8_t>
 GIFEnc::gifApplicationExtension(const string& identifier,
                                 const string& authentication,
-                                const vector<uint8_t>& data) noexcept {
+                                const span<const uint8_t>& data) noexcept {
     if (identifier.size() != 8 || authentication.size() != 3) {
         return {};
     }

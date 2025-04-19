@@ -2,10 +2,10 @@
 #include <string>
 
 #include "cxxopts.hpp"
+#include "file_utils.h"
 #include "imsq_stream.h"
 #include "log.h"
 #include "options.h"
-#include "path.h"
 
 using std::string;
 
@@ -22,6 +22,13 @@ class OptionInvalidException final : public std::exception {
   private:
     std::string msg;
 };
+
+static string
+genTempName() {
+    static const string prefix = "GIFLsb_";
+    static const string suffix = ".tmp";
+    return prefix + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + suffix;
+}
 
 std::optional<GIFLsb::DecodeOptions>
 GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
@@ -58,8 +65,10 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
         DecodeOptions gifOptions;
         gifOptions.imagePath       = result["image"].as<string>();
         gifOptions.image           = GIFImage::ImageSequenceStream::read(gifOptions.imagePath);
-        gifOptions.outputFile      = result.count("name") ? result["name"].as<string>() : "";
+        gifOptions.outputName      = result.count("name") ? result["name"].as<string>() : "";
         gifOptions.outputDirectory = result.count("directory") ? result["directory"].as<string>() : ".";
+        gifOptions.tempFileName    = genTempName();
+        gifOptions.outputFile      = NaiveIO::FileWriter::create(gifOptions.outputDirectory + '/' + gifOptions.tempFileName);
         gifOptions.ensureValid();
 
         return gifOptions;
@@ -87,8 +96,11 @@ GIFLsb::DecodeOptions::ensureValid() {
     if (!image) {
         throw OptionInvalidException("Invalid image file.");
     }
-    if (!outputFile.empty() && !isValidFileName(outputFile)) {
-        throw OptionInvalidException("Invalid output filename: " + outputFile);
+    if (!outputFile) {
+        throw OptionInvalidException("Invalid output filename or directory.");
+    }
+    if (!outputName.empty() && !NaiveIO::isValidFileName(outputName)) {
+        throw OptionInvalidException("Invalid output filename: " + outputName);
     }
     if (outputDirectory.back() != '/' && outputDirectory.back() != '\\') {
         outputDirectory.push_back('/');
