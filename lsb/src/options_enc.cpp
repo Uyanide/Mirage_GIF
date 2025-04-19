@@ -87,8 +87,10 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
         }
 
         EncodeOptions gifOptions;
-        gifOptions.imageFile            = result["image"].as<string>();
-        gifOptions.encyptFile           = result["file"].as<string>();
+        gifOptions.imagePath            = result["image"].as<string>();
+        gifOptions.image                = GIFImage::ImageSequence::read(gifOptions.imagePath);
+        gifOptions.filePath             = result["file"].as<string>();
+        gifOptions.file                 = GIFLsb::FileReader::create(gifOptions.filePath);
         gifOptions.outputFile           = result["output"].as<string>();
         gifOptions.markText             = result["mark_text"].as<string>();
         gifOptions.disableDither        = result.count("no_dither");
@@ -104,7 +106,7 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
             gifOptions.threadCount = getThreadCount();
         }
 
-        gifOptions.checkValid();
+        gifOptions.ensureValid();
 
         return gifOptions;
     } catch (const cxxopts::exceptions::parsing& e) {
@@ -121,7 +123,13 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
 }
 
 void
-EncodeOptions::checkValid() const {
+EncodeOptions::ensureValid() {
+    if (!image) {
+        throw OptionInvalidException("Invalid image file.");
+    }
+    if (!file) {
+        throw OptionInvalidException("Invalid file to encrypt.");
+    }
     if (numColors < Limits::MIN_NUM_COLORS || numColors > Limits::MAX_NUM_COLORS) {
         throw OptionInvalidException("Number of colors must be between " + std::to_string(Limits::MIN_NUM_COLORS) +
                                      " and " + std::to_string(Limits::MAX_NUM_COLORS));

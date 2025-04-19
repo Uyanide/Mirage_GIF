@@ -1,8 +1,7 @@
-#include <leptonica/allheaders.h>
+#include <allheaders.h>
 
 #include <algorithm>
 #include <numeric>
-#include <ranges>
 #include <string>
 #include <unordered_set>
 

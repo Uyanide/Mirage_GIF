@@ -29,9 +29,15 @@ if(WIN32)
 else()
     find_package(PkgConfig REQUIRED)
 
-    pkg_check_modules(LEPTONICA REQUIRED lept)
-    pkg_check_modules(FFMPEG REQUIRED libavcodec libavformat libavutil libswscale libavfilter)
+    # include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/PkgconfigUtils.cmake)
+    set(leptonica_libs lept)
+    set(ffmpeg_libs libavcodec libavformat libavutil libswscale libavfilter)
 
+    pkg_check_modules(LEPTONICA REQUIRED ${leptonica_libs})
+    pkg_check_modules(FFMPEG REQUIRED ${ffmpeg_libs})
+
+    # set(IMSQ_LINK_DIRS "")
+    # pkg_append_link_directory(IMSQ_LINK_DIRS ${leptonica_libs} ${ffmpeg_libs})
     list(APPEND IMSQ_LINK_LIBRARIES ${FFMPEG_LIBRARIES} ${LEPTONICA_LIBRARIES})
     list(APPEND IMSQ_SRC
         ${CMAKE_CURRENT_LIST_DIR}/src/imsq_ffmpeg.cpp
@@ -75,6 +81,8 @@ target_include_directories(image_sequence PRIVATE
 if(CMAKE_COMPILER_IS_GNUCXX)
     list(APPEND IMSQ_LINK_LIBRARIES m)
 endif()
+
+target_link_directories(image_sequence PUBLIC ${IMSQ_LINK_DIRS})
 
 target_link_libraries(image_sequence PUBLIC ${IMSQ_LINK_LIBRARIES})
 

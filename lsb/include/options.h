@@ -5,17 +5,25 @@
 #include <optional>
 #include <string>
 
+#include "file_reader.h"
+#include "imsq.h"
+#include "imsq_stream.h"
+
 namespace GIFLsb {
 
 class DecodeOptions {
   public:
-    std::string decyptImage;
+    GIFImage::ImageSequenceStream::Ref image;
+    std::string imagePath;
     std::string outputFile;
     std::string outputDirectory;  // ends with '/'
 
   public:
     static std::optional<DecodeOptions>
     parseArgs(int argc, char** argv) noexcept;
+
+    void
+    ensureValid();
 };
 
 class EncodeOptions {
@@ -34,8 +42,10 @@ class EncodeOptions {
     };
 
   public:
-    std::string imageFile;
-    std::string encyptFile;
+    GIFImage::ImageSequence::Ref image;
+    GIFLsb::FileReader::Ref file;
+    std::string imagePath;
+    std::string filePath;
     std::string markText;
     bool disableDither            = false;
     bool transparency             = false;
@@ -53,7 +63,7 @@ class EncodeOptions {
     parseArgs(int argc, char** argv) noexcept;
 
     void
-    checkValid() const;
+    ensureValid();
 };
 }  // namespace GIFLsb
 

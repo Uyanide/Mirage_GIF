@@ -1,10 +1,11 @@
 #ifndef GIFMIRAGE_GIF_OPTIONS_H
 #define GIFMIRAGE_GIF_OPTIONS_H
 
+#include <cstdint>
 #include <optional>
 #include <string>
 
-#include "def.h"
+#include "imsq.h"
 
 namespace GIFMirage {
 
@@ -52,8 +53,10 @@ class Options {
         static constexpr uint32_t disposalMethod = 3;
     };
 
-    std::string innerFile;
-    std::string coverFile;
+    GIFImage::ImageSequence::Ref innerImage;
+    GIFImage::ImageSequence::Ref coverImage;
+    std::string innerPath;
+    std::string coverPath;
     std::string outputFile = Defaults::outputFile;
     uint32_t width         = Defaults::width;
     uint32_t height        = Defaults::height;
@@ -68,7 +71,7 @@ class Options {
     parseArgs(int argc, char** argv) noexcept;
 
     void
-    checkValid() const;
+    ensureValid() const;
 };
 }  // namespace GIFMirage
 

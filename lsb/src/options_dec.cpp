@@ -2,6 +2,7 @@
 #include <string>
 
 #include "cxxopts.hpp"
+#include "imsq_stream.h"
 #include "log.h"
 #include "options.h"
 #include "path.h"
@@ -10,7 +11,8 @@ using std::string;
 
 class OptionInvalidException final : public std::exception {
   public:
-    explicit OptionInvalidException(const std::string&& msg) : msg(msg) {}
+    explicit OptionInvalidException(const std::string&& msg)
+        : msg(msg) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -54,15 +56,11 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
         }
 
         DecodeOptions gifOptions;
-        gifOptions.decyptImage     = result["image"].as<string>();
+        gifOptions.imagePath       = result["image"].as<string>();
+        gifOptions.image           = GIFImage::ImageSequenceStream::read(gifOptions.imagePath);
         gifOptions.outputFile      = result.count("name") ? result["name"].as<string>() : "";
         gifOptions.outputDirectory = result.count("directory") ? result["directory"].as<string>() : ".";
-        if (!gifOptions.outputFile.empty() && !isValidFileName(gifOptions.outputFile)) {
-            throw OptionInvalidException("Invalid output filename: " + gifOptions.outputFile);
-        }
-        if (gifOptions.outputDirectory.back() != '/' && gifOptions.outputDirectory.back() != '\\') {
-            gifOptions.outputDirectory.push_back('/');
-        }
+        gifOptions.ensureValid();
 
         return gifOptions;
     } catch (const cxxopts::exceptions::parsing& e) {
@@ -81,5 +79,18 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
         GeneralLogger::error("Unexpected error.");
         std::cout << options.help() << std::endl;
         return std::nullopt;
+    }
+}
+
+void
+GIFLsb::DecodeOptions::ensureValid() {
+    if (!image) {
+        throw OptionInvalidException("Invalid image file.");
+    }
+    if (!outputFile.empty() && !isValidFileName(outputFile)) {
+        throw OptionInvalidException("Invalid output filename: " + outputFile);
+    }
+    if (outputDirectory.back() != '/' && outputDirectory.back() != '\\') {
+        outputDirectory.push_back('/');
     }
 }

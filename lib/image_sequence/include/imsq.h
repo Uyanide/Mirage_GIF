@@ -12,16 +12,16 @@ namespace GIFImage {
 // Forward declaration
 class ImageSequence;
 
-using ImageSequenceRef = std::unique_ptr<ImageSequence>;
-
 class ImageSequence {
   public:
+    using Ref = std::unique_ptr<ImageSequence>;
+
     static bool
     initDecoder(const char*) noexcept;
 
     static constexpr uint32_t DEFAULT_DELAY = 40;  // Default delay in milliseconds
 
-    static ImageSequenceRef
+    static Ref
     read(const std::string& filename) noexcept;
 
     static std::vector<PixelBGRA>

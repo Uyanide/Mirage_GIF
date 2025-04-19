@@ -28,7 +28,8 @@ class EOFException final : public std::exception {};
 
 class DecodingException final : public std::exception {
   public:
-    explicit DecodingException(const string&& message) : msg(message) {}
+    explicit DecodingException(const string&& message)
+        : msg(message) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -87,11 +88,11 @@ decodeHeader(const PopByteFunc& func) {
 bool
 GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
     GeneralLogger::info("Starting LSB decoding...");
-    GeneralLogger::info("Input file: " + args.decyptImage, GeneralLogger::STEP);
+    GeneralLogger::info("Input file: " + args.imagePath, GeneralLogger::STEP);
 
-    const auto image = ImageSequenceStream::read(args.decyptImage);
+    const auto image = ImageSequenceStream::read(args.imagePath);
     if (!image) {
-        GeneralLogger::error("Failed to read image: " + args.decyptImage);
+        GeneralLogger::error("Failed to read image: " + args.imagePath);
         return false;
     }
 

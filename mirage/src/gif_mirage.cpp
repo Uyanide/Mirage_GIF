@@ -73,9 +73,8 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
     GeneralLogger::info("Frame duration: " + std::to_string(args.delay), GeneralLogger::STEP);
     GeneralLogger::info("Merge mode: " + args.mergeMode.toString(), GeneralLogger::STEP);
 
-    GeneralLogger::info("Reading images...");
-    auto inner = GIFImage::ImageSequence::read(args.innerFile);
-    auto cover = GIFImage::ImageSequence::read(args.coverFile);
+    auto& inner = args.innerImage;
+    auto& cover = args.coverImage;
     if (!inner || !cover) {
         return false;
     }

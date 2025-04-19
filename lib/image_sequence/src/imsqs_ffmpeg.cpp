@@ -13,7 +13,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-using std::string, std::vector;
+using std::string;
 
 using namespace GIFImage;
 
@@ -24,7 +24,8 @@ ImageSequenceStream::initDecoder(const char*) noexcept {
 
 class ImageParseException final : public std::exception {
   public:
-    explicit ImageParseException(const string&& message) : m_msg(message) {}
+    explicit ImageParseException(const string&& message)
+        : m_msg(message) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -43,7 +44,7 @@ class ImageSequenceStreamImpl : public ImageSequenceStream {
 
     ~ImageSequenceStreamImpl() noexcept override;
 
-    [[nodiscard]] FrameRef
+    [[nodiscard]] Frame::Ref
     getNextFrame() noexcept override;
 
     [[nodiscard]] bool
@@ -65,7 +66,7 @@ class ImageSequenceStreamImpl : public ImageSequenceStream {
     bool m_inFrame = false;
 };
 
-ImageSequenceStreamRef
+ImageSequenceStream::Ref
 ImageSequenceStream::read(const string& filename) noexcept {
     try {
         return std::make_unique<ImageSequenceStreamImpl>(filename);
@@ -122,7 +123,7 @@ ImageSequenceStreamImpl::ImageSequenceStreamImpl(const string& filename) {
     }
 }
 
-ImageSequenceStreamImpl::~ImageSequenceStreamImpl() {
+ImageSequenceStreamImpl::~ImageSequenceStreamImpl() noexcept {
     if (m_inFrame && m_packet) av_packet_unref(m_packet);
     if (m_packet) av_packet_free(&m_packet);
     if (m_frame) av_frame_free(&m_frame);
@@ -130,7 +131,7 @@ ImageSequenceStreamImpl::~ImageSequenceStreamImpl() {
     if (m_formatCtx) avformat_close_input(&m_formatCtx);
 }
 
-FrameRef
+Frame::Ref
 ImageSequenceStreamImpl::getNextFrame() noexcept {
     if (m_eof) return nullptr;
     try {
@@ -160,9 +161,9 @@ ImageSequenceStreamImpl::getNextFrame() noexcept {
                                               std::to_string(m_frame->width) + "x" + std::to_string(m_frame->height));
                 }
 
-                FrameRef frame = std::make_unique<Frame>();
-                frame->width   = m_frame->width;
-                frame->height  = m_frame->height;
+                Frame::Ref frame = std::make_unique<Frame>();
+                frame->width     = m_frame->width;
+                frame->height    = m_frame->height;
                 frame->buffer.resize(frame->width * frame->height);
 
                 if (m_frame->duration > 0) {

@@ -1,13 +1,9 @@
 #ifdef IMSQ_USE_FFMPEG
 
-#include <filesystem>
-#include <fstream>
-#include <span>
 #include <string>
 
 #include "imsq.h"
 #include "log.h"
-#include "path.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -21,7 +17,7 @@ extern "C" {
 }
 
 using namespace GIFImage;
-using std::string, std::vector, std::span;
+using std::string, std::vector;
 
 class ImageParseException final : public std::exception {
   public:
@@ -80,7 +76,7 @@ ImageSequence::initDecoder(const char*) noexcept {
     return true;
 }
 
-ImageSequenceRef
+ImageSequence::Ref
 ImageSequence::read(const string& filename) noexcept {
     try {
         return std::make_unique<ImageSequenceImpl>(filename);
@@ -303,7 +299,7 @@ ImageSequence::drawText(vector<PixelBGRA>& buffer,
                         const PixelBGRA& textBackgroundColor,
                         const PixelBGRA& textForegroundColor,
                         const double textHeightRatio,
-                        const double textPadding,
+                        const double _,
                         const uint32_t x,
                         const uint32_t y,
                         const std::string& fontFamily) noexcept {

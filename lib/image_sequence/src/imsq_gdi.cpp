@@ -23,7 +23,8 @@ static constexpr const char* FALLBACK_FONT = "Arial";
 
 class ImageParseException final : public std::exception {
   public:
-    explicit ImageParseException(const std::string&& message) : m_msg(message) {}
+    explicit ImageParseException(const std::string&& message)
+        : m_msg(message) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -111,7 +112,7 @@ class ImageSequenceWebpImpl : public GIFImage::ImageSequence {
     std::mutex m_demuxMutex;
 };
 
-std::unique_ptr<GIFImage::ImageSequence>
+GIFImage::ImageSequence::Ref
 GIFImage::ImageSequence::read(const std::string& filename) noexcept {
     try {
         std::string ext = filename.substr(filename.find_last_of('.') + 1);

@@ -1,7 +1,5 @@
 #include <cstddef>
 #include <cstring>
-#include <filesystem>
-#include <fstream>
 #include <functional>
 #include <mutex>
 #include <span>
@@ -10,6 +8,7 @@
 #include <vector>
 
 #include "MimeTypes.h"
+#include "file_reader.h"
 #include "gif_encoder.h"
 #include "gif_exception.h"
 #include "gif_lsb.h"
@@ -70,7 +69,7 @@ getDitherMode(const bool disableDither, const uint32_t frameCount, const bool gr
 }
 
 static std::shared_ptr<vector<QuantizerResult>>
-quant(const ImageSequenceRef& image,
+quant(const ImageSequence::Ref& image,
       const EncodeOptions& args,
       const vector<PixelBGRA>& markImage,
       const uint32_t markWidth,
@@ -186,7 +185,7 @@ static bool
 genPalettes(GetPaletteFunc& getPalette,
             GetIndicesFunc& getIndices,
             const EncodeOptions& args,
-            const ImageSequenceRef& image,
+            const ImageSequence::Ref& image,
             const vector<PixelBGRA>& markImage,
             const uint32_t markWidth,
             const uint32_t markHeight,
@@ -276,53 +275,13 @@ genPalettes(GetPaletteFunc& getPalette,
     return true;
 }
 
-class FileReaderException final : public std::exception {
+class LsbFileReader {
   public:
-    explicit FileReaderException(const string&& message)
-        : m_message(message) {}
-
-    [[nodiscard]] const char*
-    what() const noexcept override {
-        return m_message.c_str();
-    }
-
-  private:
-    string m_message;
-};
-
-class FileReader {
-  public:
-    FileReader(const string& filePath, const uint32_t lsbLevel)
-        : m_bitsPerPixel(lsbLevel * 3), m_buffer(READ_CHUNK_SIZE) {
+    LsbFileReader(const FileReader::Ref& fileReader, const string& filePath, const uint32_t lsbLevel)
+        : m_bitsPerPixel(lsbLevel * 3), m_file(fileReader), m_buffer(READ_CHUNK_SIZE) {
         m_fileName = getFileName(filePath);
-        m_filePath = std::filesystem::path(localizePath(filePath));
-        if (!std::filesystem::exists(m_filePath)) {
-            throw FileReaderException("Input file does not exist: " + filePath);
-        }
-        m_file = std::ifstream(m_filePath, std::ios::binary);
-        if (!m_file.is_open()) {
-            throw FileReaderException("Failed to open input file: " + filePath);
-        }
-        m_file.seekg(0, std::ios::end);
-        if (m_file.fail()) {
-            throw FileReaderException("Failed to seek to end of file: " + filePath);
-        }
-        const auto fileSize = m_file.tellg();
-        m_file.seekg(0, std::ios::beg);
-        if (m_file.fail()) {
-            throw FileReaderException("Failed to seek to beginning of file: " + filePath);
-        }
-        if (fileSize == -1) {
-            throw FileReaderException("Failed to get file size: " + filePath);
-        }
-        m_fileSize = static_cast<size_t>(fileSize);
+        m_fileSize = m_file->getSize();
         setHeader();
-    }
-
-    ~FileReader() {
-        if (m_file.is_open()) {
-            m_file.close();
-        }
     }
 
     [[nodiscard]] uint32_t
@@ -366,7 +325,7 @@ class FileReader {
 
     [[nodiscard]] bool
     isEOF() const {
-        return m_file.eof() && m_bufferPos >= m_bufferSize && m_byteBufferSize == 0;
+        return m_file->isEOF() && m_bufferPos >= m_bufferSize && m_byteBufferSize == 0;
     }
 
   private:
@@ -388,7 +347,7 @@ class FileReader {
             *(header.end() - 1) = 0;
         }
         // const auto mimeP = MimeTypes::getType(extName.c_str());
-        const auto mimeP = MimeTypes::getType(getExtName(m_filePath.string()).c_str());
+        const auto mimeP = MimeTypes::getType(getExtName(m_fileName.c_str()).c_str());
         string mimeType  = mimeP ? string(mimeP) : "application/octet-stream";
         header.insert(header.end(), mimeType.begin(), mimeType.end());
         header.push_back(0);
@@ -408,25 +367,20 @@ class FileReader {
 
     bool
     loadChunk() {
-        if (m_file.eof()) {
+        if (m_file->isEOF()) {
             m_bufferPos = m_bufferSize = 0;
             return false;
         }
-        m_isHeader = false;
-        m_file.read(reinterpret_cast<char*>(m_buffer.data()), READ_CHUNK_SIZE);
-        if (m_file.fail() && !m_file.eof()) {
-            throw FileReaderException("Fatal error while reading file: " + m_filePath.string());
-        }
-        m_bufferSize = static_cast<size_t>(m_file.gcount());
+        m_isHeader   = false;
+        m_bufferSize = m_file->read({m_buffer.data(), READ_CHUNK_SIZE});
         m_bufferPos  = 0;
         return m_bufferSize > 0;
     }
 
     uint32_t m_bitsPerPixel = 0;
 
-    std::filesystem::path m_filePath;
     string m_fileName;
-    std::ifstream m_file;
+    const FileReader::Ref& m_file;
     size_t m_fileSize   = 0;
     size_t m_headerSize = 0;
     size_t m_chunksRead = 0;
@@ -472,7 +426,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
     }
 
     GeneralLogger::info("Reading image...");
-    auto image = ImageSequence::read(args.imageFile);
+    auto& image = args.image;
     if (!image) {
         return false;
     }
@@ -485,7 +439,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
     try {
 
         GeneralLogger::info("Reading encrypt file...");
-        FileReader fileReader(args.encyptFile, lsbLevel);
+        LsbFileReader fileReader(args.file, args.filePath, lsbLevel);
         const size_t fileSize = fileReader.getSize();
         GeneralLogger::info("Size of file to encrypt: " + std::to_string(fileSize), GeneralLogger::STEP);
 

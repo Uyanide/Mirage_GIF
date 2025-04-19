@@ -13,7 +13,6 @@
 #include "gif_mirage.h"
 #include "gif_options.h"
 #include "imsq.h"
-#include "log.h"
 
 int
 main(int argc, char** argv) {

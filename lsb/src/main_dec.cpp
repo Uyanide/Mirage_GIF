@@ -12,7 +12,6 @@
 
 #include "gif_lsb.h"
 #include "imsq_stream.h"
-#include "log.h"
 #include "options.h"
 
 int

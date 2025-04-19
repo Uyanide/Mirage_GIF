@@ -13,26 +13,27 @@ class ImageSequenceStream;
 static constexpr uint32_t DEFAULT_DELAY = 40;
 
 struct Frame {
+    using Ref = std::unique_ptr<Frame>;
+
     std::vector<PixelBGRA> buffer;
     uint32_t width  = 0;
     uint32_t height = 0;
     uint32_t delay  = DEFAULT_DELAY;  // Delay in milliseconds
 };
 
-using ImageSequenceStreamRef = std::unique_ptr<ImageSequenceStream>;
-using FrameRef               = std::unique_ptr<Frame>;
-
 class ImageSequenceStream {
   public:
+    using Ref = std::unique_ptr<ImageSequenceStream>;
+
     static bool
     initDecoder(const char*) noexcept;
 
-    static ImageSequenceStreamRef
+    static Ref
     read(const std::string&) noexcept;
 
     virtual ~ImageSequenceStream() = default;
 
-    virtual FrameRef
+    virtual Frame::Ref
     getNextFrame() noexcept = 0;
 
     [[nodiscard]] virtual bool

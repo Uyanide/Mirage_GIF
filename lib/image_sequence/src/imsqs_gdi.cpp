@@ -23,13 +23,14 @@ class ImageSequenceStreamImpl : public ImageSequenceStream {
     isEndOfStream() const noexcept override;
 
   private:
-    ImageSequenceRef m_imsq = nullptr;
-    uint32_t m_currFrame    = 0;
+    ImageSequence::Ref m_imsq = nullptr;
+    uint32_t m_currFrame      = 0;
 };
 
 class ImageParseException final : public std::exception {
   public:
-    explicit ImageParseException(const string&& message) : m_msg(message) {}
+    explicit ImageParseException(const string&& message)
+        : m_msg(message) {}
 
     [[nodiscard]] const char*
     what() const noexcept override {
@@ -45,7 +46,7 @@ ImageSequenceStream::initDecoder(const char*) noexcept {
     return ImageSequence::initDecoder("");
 }
 
-ImageSequenceStreamRef
+ImageSequenceStream::Ref
 ImageSequenceStream::read(const string& filename) noexcept {
     try {
         return std::make_unique<ImageSequenceStreamImpl>(filename);
@@ -66,7 +67,7 @@ ImageSequenceStreamImpl::isEndOfStream() const noexcept {
     return m_currFrame >= m_imsq->getFrameCount();
 }
 
-FrameRef
+Frame::Ref
 ImageSequenceStreamImpl::getNextFrame() noexcept {
     while (true) {
         if (isEndOfStream()) {
