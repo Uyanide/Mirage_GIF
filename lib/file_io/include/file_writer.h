@@ -3,7 +3,9 @@
 
 #include <exception>
 #include <memory>
+#include <span>
 #include <string>
+
 
 namespace NaiveIO {
 class FileWriterException final : public std::exception {

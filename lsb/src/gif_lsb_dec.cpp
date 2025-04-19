@@ -152,11 +152,10 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
         GeneralLogger::info("Decoding frames...");
         // std::filesystem::path outputPath;
         string fileName;
-        if (!headerData.fileName.empty() && args.outputName.empty()) {
-            // outputPath = std::filesystem::path(NaiveIO::localizePath(args.outputDirectory + headerData.fileName));
-            fileName = headerData.fileName;
-        } else if (!args.outputName.empty()) {
+        if (!args.outputName.empty()) {
             fileName = NaiveIO::replaceExtName(args.outputName, NaiveIO::getExtName(headerData.fileName));
+        } else if (!headerData.fileName.empty() && NaiveIO::isValidFileName(headerData.fileName)) {
+            fileName = headerData.fileName;
         } else {
             fileName = "decrypted_" +
                        std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) +

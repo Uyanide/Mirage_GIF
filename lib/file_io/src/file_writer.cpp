@@ -93,9 +93,8 @@ class FileWriterImpl final : public NaiveIO::FileWriter {
         if (m_filePath.empty()) return false;
         if (!std::filesystem::exists(m_filePath)) return false;
 
-        const auto newName = localizePath(name);
         const auto newPath =
-            std::filesystem::path(localizePath(m_filePath.parent_path() / newName));
+            std::filesystem::path(localizePath(deLocalizePath(m_filePath.parent_path()) + '/' + name));
 
         if (std::filesystem::exists(newPath)) {
             if (force) {

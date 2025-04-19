@@ -133,7 +133,7 @@ GIFImage::ImageSequence::read(const std::string& filename) noexcept {
 
 static auto
 checkFileExists(const std::string& filename) {
-    auto localized = localizePath(filename);
+    auto localized = NaiveIO::localizePath(filename);
     if (const std::filesystem::path filePath(localized); std::filesystem::exists(filePath)) {
         return localized;
     } else {
