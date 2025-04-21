@@ -2,9 +2,12 @@
 #define GIF_MIRAGE_IMAGE_SEQUENCE_STREAM_H
 
 #include <memory>
+#include <span>
+#include <string>
 #include <vector>
 
 #include "def.h"
+
 
 namespace GIFImage {
 
