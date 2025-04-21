@@ -31,6 +31,12 @@ class ImageSequenceStream {
     static Ref
     read(const std::string&) noexcept;
 
+    static Ref
+    load(const std::span<const std::span<const PixelBGRA>>& frames,
+         const std::span<const uint32_t>& delays,
+         const std::span<const uint32_t> widths,
+         const std::span<const uint32_t> heights) noexcept;
+
     virtual ~ImageSequenceStream() = default;
 
     virtual Frame::Ref

@@ -24,6 +24,12 @@ class ImageSequence {
     static Ref
     read(const std::string& filename) noexcept;
 
+    static Ref
+    load(const std::span<const std::span<const PixelBGRA>>& frames,
+         const std::span<const uint32_t>& delays,
+         uint32_t width,
+         uint32_t height) noexcept;
+
     static std::vector<PixelBGRA>
     parseBase64(const std::string& base64) noexcept;
 

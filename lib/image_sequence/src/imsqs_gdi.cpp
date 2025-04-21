@@ -5,16 +5,17 @@
 #ifdef IMSQ_USE_GDIPLUS
 // since GDI + will read the whole image into memory on first access anyway.
 
+#include "imsq_exception.h"
 #include "imsq_stream.h"
 
 using namespace GIFImage;
 using std::string;
 
-class ImageSequenceStreamImpl : public ImageSequenceStream {
+class ImageSequenceStreamGdiplusImpl : public ImageSequenceStream {
   public:
-    explicit ImageSequenceStreamImpl(const string&);
+    explicit ImageSequenceStreamGdiplusImpl(const string&);
 
-    ~ImageSequenceStreamImpl() override = default;
+    ~ImageSequenceStreamGdiplusImpl() override = default;
 
     Frame::Ref
     getNextFrame() noexcept override;
@@ -27,20 +28,6 @@ class ImageSequenceStreamImpl : public ImageSequenceStream {
     uint32_t m_currFrame      = 0;
 };
 
-class ImageParseException final : public std::exception {
-  public:
-    explicit ImageParseException(const string&& message)
-        : m_msg(message) {}
-
-    [[nodiscard]] const char*
-    what() const noexcept override {
-        return m_msg.c_str();
-    }
-
-  private:
-    string m_msg;
-};
-
 bool
 ImageSequenceStream::initDecoder(const char*) noexcept {
     return ImageSequence::initDecoder("");
@@ -49,13 +36,13 @@ ImageSequenceStream::initDecoder(const char*) noexcept {
 ImageSequenceStream::Ref
 ImageSequenceStream::read(const string& filename) noexcept {
     try {
-        return std::make_unique<ImageSequenceStreamImpl>(filename);
+        return std::make_unique<ImageSequenceStreamGdiplusImpl>(filename);
     } catch (const ImageParseException& e) {
         return nullptr;
     }
 }
 
-ImageSequenceStreamImpl::ImageSequenceStreamImpl(const string& filename) {
+ImageSequenceStreamGdiplusImpl::ImageSequenceStreamGdiplusImpl(const string& filename) {
     m_imsq = ImageSequence::read(filename);
     if (!m_imsq) {
         throw ImageParseException("Failed to read image sequence: " + filename);
@@ -63,12 +50,12 @@ ImageSequenceStreamImpl::ImageSequenceStreamImpl(const string& filename) {
 }
 
 bool
-ImageSequenceStreamImpl::isEndOfStream() const noexcept {
+ImageSequenceStreamGdiplusImpl::isEndOfStream() const noexcept {
     return m_currFrame >= m_imsq->getFrameCount();
 }
 
 Frame::Ref
-ImageSequenceStreamImpl::getNextFrame() noexcept {
+ImageSequenceStreamGdiplusImpl::getNextFrame() noexcept {
     while (true) {
         if (isEndOfStream()) {
             return nullptr;

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "imsq_exception.h"
 #include "imsq_stream.h"
 #include "log.h"
 
@@ -22,27 +23,13 @@ ImageSequenceStream::initDecoder(const char*) noexcept {
     return true;
 }
 
-class ImageParseException final : public std::exception {
-  public:
-    explicit ImageParseException(const string&& message)
-        : m_msg(message) {}
-
-    [[nodiscard]] const char*
-    what() const noexcept override {
-        return m_msg.c_str();
-    }
-
-  private:
-    string m_msg;
-};
-
 class EOFException : public std::exception {};
 
-class ImageSequenceStreamImpl : public ImageSequenceStream {
+class ImageSequenceStreamFFmpegImpl : public ImageSequenceStream {
   public:
-    explicit ImageSequenceStreamImpl(const string& filename);
+    explicit ImageSequenceStreamFFmpegImpl(const string& filename);
 
-    ~ImageSequenceStreamImpl() noexcept override;
+    ~ImageSequenceStreamFFmpegImpl() noexcept override;
 
     [[nodiscard]] Frame::Ref
     getNextFrame() noexcept override;
@@ -69,14 +56,14 @@ class ImageSequenceStreamImpl : public ImageSequenceStream {
 ImageSequenceStream::Ref
 ImageSequenceStream::read(const string& filename) noexcept {
     try {
-        return std::make_unique<ImageSequenceStreamImpl>(filename);
+        return std::make_unique<ImageSequenceStreamFFmpegImpl>(filename);
     } catch (const ImageParseException& e) {
         GeneralLogger::error("Error reading image sequence: " + string(e.what()));
         return nullptr;
     }
 }
 
-ImageSequenceStreamImpl::ImageSequenceStreamImpl(const string& filename) {
+ImageSequenceStreamFFmpegImpl::ImageSequenceStreamFFmpegImpl(const string& filename) {
     try {
         if (avformat_open_input(&m_formatCtx, filename.c_str(), nullptr, nullptr) < 0) {
             throw ImageParseException("Failed to open file: " + filename);
@@ -123,7 +110,7 @@ ImageSequenceStreamImpl::ImageSequenceStreamImpl(const string& filename) {
     }
 }
 
-ImageSequenceStreamImpl::~ImageSequenceStreamImpl() noexcept {
+ImageSequenceStreamFFmpegImpl::~ImageSequenceStreamFFmpegImpl() noexcept {
     if (m_inFrame && m_packet) av_packet_unref(m_packet);
     if (m_packet) av_packet_free(&m_packet);
     if (m_frame) av_frame_free(&m_frame);
@@ -132,7 +119,7 @@ ImageSequenceStreamImpl::~ImageSequenceStreamImpl() noexcept {
 }
 
 Frame::Ref
-ImageSequenceStreamImpl::getNextFrame() noexcept {
+ImageSequenceStreamFFmpegImpl::getNextFrame() noexcept {
     if (m_eof) return nullptr;
     try {
         while (true) {

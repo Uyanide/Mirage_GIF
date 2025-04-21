@@ -3,6 +3,7 @@
 #include <string>
 
 #include "imsq.h"
+#include "imsq_exception.h"
 #include "log.h"
 
 extern "C" {
@@ -19,25 +20,11 @@ extern "C" {
 using namespace GIFImage;
 using std::string, std::vector;
 
-class ImageParseException final : public std::exception {
+class ImageSequenceFFmpegImpl : public ImageSequence {
   public:
-    explicit ImageParseException(const string&& message)
-        : m_msg(message) {}
+    explicit ImageSequenceFFmpegImpl(const string& filename);
 
-    [[nodiscard]] const char*
-    what() const noexcept override {
-        return m_msg.c_str();
-    }
-
-  private:
-    string m_msg;
-};
-
-class ImageSequenceImpl : public ImageSequence {
-  public:
-    explicit ImageSequenceImpl(const string& filename);
-
-    ~ImageSequenceImpl() noexcept override = default;
+    ~ImageSequenceFFmpegImpl() noexcept override = default;
 
     [[nodiscard]] const vector<uint32_t>&
     getDelays() noexcept override {
@@ -79,14 +66,14 @@ ImageSequence::initDecoder(const char*) noexcept {
 ImageSequence::Ref
 ImageSequence::read(const string& filename) noexcept {
     try {
-        return std::make_unique<ImageSequenceImpl>(filename);
+        return std::make_unique<ImageSequenceFFmpegImpl>(filename);
     } catch (const std::exception& e) {
         GeneralLogger::error("Error reading image sequence: " + string(e.what()));
         return nullptr;
     }
 }
 
-ImageSequenceImpl::ImageSequenceImpl(const string& filename) {
+ImageSequenceFFmpegImpl::ImageSequenceFFmpegImpl(const string& filename) {
     AVFormatContext* formatCtx = nullptr;
     AVCodecContext* codecCtx   = nullptr;
     AVPacket* packet           = nullptr;
@@ -273,9 +260,9 @@ ImageSequence::resizeCover(const vector<PixelBGRA>& buffer,
 }
 
 vector<PixelBGRA>
-ImageSequenceImpl::getFrameBuffer(uint32_t index,
-                                  uint32_t width,
-                                  uint32_t height) noexcept {
+ImageSequenceFFmpegImpl::getFrameBuffer(uint32_t index,
+                                        uint32_t width,
+                                        uint32_t height) noexcept {
     if (index >= m_frameBuffer.size()) {
         index %= m_frameBuffer.size();
     }
@@ -641,53 +628,6 @@ ImageSequence::parseBase64(const string& base64) noexcept {
     }
     defer();
     return result;
-}
-
-bool
-ImageSequence::drawMark(vector<PixelBGRA>& buffer,
-                        const uint32_t width,
-                        const uint32_t height,
-                        const vector<PixelBGRA>& markBuffer,
-                        const uint32_t markWidth,
-                        const uint32_t markHeight,
-                        const uint32_t x,
-                        const uint32_t y) noexcept {
-    try {
-        if (width == 0 || height == 0 || markWidth == 0 || markHeight == 0) {
-            throw ImageParseException("Invalid dimensions for drawing mark.");
-        }
-        if (buffer.size() != width * height) {
-            throw ImageParseException("Buffer size does not match dimensions: " + std::to_string(buffer.size()) +
-                                      " != " + std::to_string(width * height));
-        }
-        if (markBuffer.size() != markWidth * markHeight) {
-            throw ImageParseException("Mark buffer size does not match dimensions: " +
-                                      std::to_string(markBuffer.size()) + " != " +
-                                      std::to_string(markWidth * markHeight));
-        }
-        if (x >= width || y >= height) {
-            throw ImageParseException("Invalid x or y coordinates for drawing mark.");
-        }
-
-        for (uint32_t i = y; i < y + markHeight && i < height; ++i) {
-            for (uint32_t j = x; j < x + markWidth && j < width; ++j) {
-                auto& buff         = buffer[i * width + j];
-                const auto& mark   = markBuffer[(i - y) * markWidth + (j - x)];
-                const double alpha = mark.a / 255.0;
-
-                buff.r = TOU8(mark.r * alpha + buff.r * (1 - alpha));
-                buff.g = TOU8(mark.g * alpha + buff.g * (1 - alpha));
-                buff.b = TOU8(mark.b * alpha + buff.b * (1 - alpha));
-                buff.a = TOU8(mark.a + buff.a * (1 - alpha));
-            }
-        }
-        return true;
-    } catch (const std::exception& e) {
-        GeneralLogger::error("Error drawing mark: " + string(e.what()));
-    } catch (...) {
-        GeneralLogger::error("Unknown error drawing mark.");
-    }
-    return false;
 }
 
 #endif  // IMSQ_USE_FFMPEG

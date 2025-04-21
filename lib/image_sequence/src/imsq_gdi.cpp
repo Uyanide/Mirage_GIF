@@ -15,31 +15,18 @@
 #include "file_utils.h"
 #include "gdi_initializer.h"
 #include "imsq.h"
+#include "imsq_exception.h"
 #include "log.h"
 
 using std::string, std::vector, std::wstring;
 
 static constexpr const char* FALLBACK_FONT = "Arial";
 
-class ImageParseException final : public std::exception {
+class ImageSequenceGdiplusImpl : public GIFImage::ImageSequence {
   public:
-    explicit ImageParseException(const std::string&& message)
-        : m_msg(message) {}
+    explicit ImageSequenceGdiplusImpl(const std::string& filename);
 
-    [[nodiscard]] const char*
-    what() const noexcept override {
-        return m_msg.c_str();
-    }
-
-  private:
-    std::string m_msg;
-};
-
-class ImageSequenceImpl : public GIFImage::ImageSequence {
-  public:
-    explicit ImageSequenceImpl(const std::string& filename);
-
-    ~ImageSequenceImpl() override;
+    ~ImageSequenceGdiplusImpl() override;
 
     [[nodiscard]] const std::vector<uint32_t>&
     getDelays() noexcept override {
@@ -121,7 +108,7 @@ GIFImage::ImageSequence::read(const std::string& filename) noexcept {
         if (ext == "webp") {
             return std::make_unique<ImageSequenceWebpImpl>(filename);
         } else {
-            return std::make_unique<ImageSequenceImpl>(filename);
+            return std::make_unique<ImageSequenceGdiplusImpl>(filename);
         }
     } catch (const std::exception& e) {
         GeneralLogger::error("Error reading image sequence: " + string(e.what()));
@@ -364,7 +351,7 @@ toWstring(const std::string& str) {
     return wstr;
 }
 
-ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
+ImageSequenceGdiplusImpl::ImageSequenceGdiplusImpl(const std::string& filename) {
     try {
         if (!gdiPlusInitializer.initialize()) {
             throw ImageParseException("GDI+ initialization failed.");
@@ -426,7 +413,7 @@ ImageSequenceImpl::ImageSequenceImpl(const std::string& filename) {
     }
 }
 
-ImageSequenceImpl::~ImageSequenceImpl() {
+ImageSequenceGdiplusImpl::~ImageSequenceGdiplusImpl() {
     delete m_image;
     if (m_delayPropItem) {
         free(m_delayPropItem);
@@ -434,7 +421,7 @@ ImageSequenceImpl::~ImageSequenceImpl() {
 }
 
 std::vector<PixelBGRA>
-ImageSequenceImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t height) noexcept {
+ImageSequenceGdiplusImpl::getFrameBuffer(uint32_t index, uint32_t width, uint32_t height) noexcept {
     Gdiplus::Bitmap* bitmap = nullptr;
     try {
         if (index >= m_delays.size()) {

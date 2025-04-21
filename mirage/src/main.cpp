@@ -14,8 +14,56 @@
 #include "gif_options.h"
 #include "imsq.h"
 
+#ifdef MOCK_COMMAND_LINE
+
+#include <cstring>
+
+#include "log.h"
+
+#if defined(__GNUC__)
+#warning "Mocking command line arguments."
+#else
+#pragma message("Mocking command line arguments.")
+#endif
+
+#define ARGC 11
+#define ARGLEN 255
+
+char**
+mockCommandLine() {
+    char** argv             = new char*[ARGC];
+    char args[ARGC][ARGLEN] = {
+        "only useful when initializing Magick++",
+        "../../images/气气.gif",
+        "../../images/马达.gif",
+        "-o",
+        "../../images/mirage-output.gif",
+        "-x",
+        "2048",
+        "-y",
+        "2048",
+        "-f",
+        "1000",
+    };
+    GeneralLogger::warn("Mocking command line arguments.");
+    for (int i = 0; i < ARGC; ++i) {
+        argv[i] = new char[ARGLEN];
+        strcpy(argv[i], args[i]);
+        GeneralLogger::warn(args[i], GeneralLogger::STEP);
+    }
+    return argv;
+}
+
+#endif  // MOCK_COMMAND_LINE
+
 int
 main(int argc, char** argv) {
+
+#ifdef MOCK_COMMAND_LINE
+    argc = ARGC;
+    argv = mockCommandLine();
+#endif  // MOCK_COMMAND_LINE
+
     auto options = GIFMirage::Options::parseArgs(argc, argv);
     if (!options) {
         return 1;
@@ -41,58 +89,14 @@ wstrToUtf8(const wchar_t* wstr) {
     return str;
 }
 
-#ifdef MOCK_COMMAND_LINE
-
-#if defined(__GNUC__)
-#warning "Mocking command line arguments."
-#else
-#pragma message("Mocking command line arguments.")
-#endif
-
-#define ARGC 11
-#define ARGLEN 255
-
-char**
-mockCommandLine() {
-    char** argv             = new char*[ARGC];
-    char args[ARGC][ARGLEN] = {
-        "only useful when initializing Magick++",
-        "../../../images/气气.gif",
-        "../../../images/马达.gif",
-        "-o",
-        "../../../images/mirage-output.gif",
-        "-x",
-        "2048",
-        "-y",
-        "2048",
-        "-f",
-        "1000",
-    };
-    GeneralLogger::warning("Mocking command line arguments.");
-    for (int i = 0; i < ARGC; ++i) {
-        argv[i] = new char[ARGLEN];
-        strcpy(argv[i], args[i]);
-        GeneralLogger::warning(args[i], GeneralLogger::STEP);
-    }
-    return argv;
-    // will be freed in main()
-}
-
-#endif  // MOCK_COMMAND_LINE
-
 int
 wmain(int argc, wchar_t** wargv) {
     SetConsoleOutputCP(CP_UTF8);
 
-#ifdef MOCK_COMMAND_LINE
-    argc        = ARGC;
-    char** argv = mockCommandLine();
-#else
     char** argv = new char*[argc];
     for (int i = 0; i < argc; ++i) {
         argv[i] = wstrToUtf8(wargv[i]);
     }
-#endif  // MOCK_COMMAND_LINE
 
     const auto ret = gifMirageMain(argc, argv);
     for (int i = 0; i < argc; ++i) {

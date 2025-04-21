@@ -432,7 +432,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
         return false;
     }
     uint32_t frameCount                  = image->getFrameCount();
-    auto delays                          = image->getDelays();
+    const vector<uint32_t>& delays       = image->getDelays();
     uint32_t width                       = image->getWidth();
     uint32_t height                      = image->getHeight();
     const auto [lsbLevel, minCodeLength] = getLsbLevelAndMinCodeLength(args.numColors);

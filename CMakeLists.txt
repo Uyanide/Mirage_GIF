@@ -5,7 +5,7 @@ project(GIFHidePic
     LANGUAGES CXX
 )
 
-if(NOT CMAKE_BUILD_TYPE)
+if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
@@ -20,5 +20,6 @@ else()
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/bin)
 endif()
 
+# list(APPEND GLOBAL_COMPILE_DEFINITIONS GENERAL_LOGGER_DISABLE)
 include(${CMAKE_CURRENT_LIST_DIR}/mirage/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/lsb/CMakeLists.txt)

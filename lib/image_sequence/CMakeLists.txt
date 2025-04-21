@@ -14,7 +14,28 @@ elseif(NOT DEFINED IMSQ_LINK_TYPE)
     set(IMSQ_LINK_TYPE ${GLOBAL_LINK_TYPE})
 endif()
 
-if(WIN32)
+set(IMSQ_SRC
+    ${CMAKE_CURRENT_LIST_DIR}/src/imsq_native.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/imsqs_native.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/quant_leptonica.cpp
+)
+
+if(DEFINED IMSQ_USE_NATIVE)
+    if(WIN32)
+        message(FATAL_ERROR "IMSQ_USE_NATIVE is not supported on Windows")
+    endif()
+
+    find_package(PkgConfig REQUIRED)
+
+    set(ENV{PKG_CONFIG_DISABLE_SHARED} 1)
+
+    pkg_check_modules(LEPTONICA REQUIRED lept)
+
+    list(APPEND IMSQ_LINK_LIBRARIES libleptonica.a)
+    list(APPEND IMSQ_INCLUDE_DIRS ${LEPTONICA_INCLUDE_DIRS})
+
+    list(APPEND IMSQ_COMPILE_DEFINITIONS "IMSQ_USE_NATIVE")
+elseif(WIN32)
     find_package(Leptonica CONFIG REQUIRED)
     find_package(Webp CONFIG REQUIRED)
 
@@ -23,7 +44,7 @@ if(WIN32)
         ${CMAKE_CURRENT_LIST_DIR}/src/imsq_gdi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/imsqs_gdi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/gdi_initializer.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/quant_leptonica.cpp)
+    )
     list(APPEND IMSQ_INCLUDE_DIRS ${Webp_INCLUDE_DIRS} ${Leptonica_INCLUDE_DIRS})
     set(IMSQ_COMPILE_DEFINITIONS "IMSQ_USE_GDIPLUS")
 else()
@@ -42,7 +63,7 @@ else()
     list(APPEND IMSQ_SRC
         ${CMAKE_CURRENT_LIST_DIR}/src/imsq_ffmpeg.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/imsqs_ffmpeg.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/quant_leptonica.cpp)
+    )
     list(APPEND IMSQ_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIRS} ${LEPTONICA_INCLUDE_DIRS})
     set(IMSQ_COMPILE_DEFINITIONS "IMSQ_USE_FFMPEG")
 endif()
