@@ -20,6 +20,5 @@ else()
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/bin)
 endif()
 
-# list(APPEND GLOBAL_COMPILE_DEFINITIONS GENERAL_LOGGER_DISABLE)
 include(${CMAKE_CURRENT_LIST_DIR}/mirage/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/lsb/CMakeLists.txt)

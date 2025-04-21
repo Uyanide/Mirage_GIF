@@ -88,7 +88,7 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
     GeneralLogger::info("Starting LSB decoding...");
     GeneralLogger::info("Input file: " + args.imagePath, GeneralLogger::STEP);
 
-    const auto image = ImageSequenceStream::read(args.imagePath);
+    const auto& image = args.image;
     if (!image) {
         GeneralLogger::error("Failed to read image: " + args.imagePath);
         return false;

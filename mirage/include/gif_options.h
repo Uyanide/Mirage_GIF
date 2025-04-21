@@ -38,7 +38,7 @@ class Options {
         static constexpr uint32_t height         = 640;
         static constexpr uint32_t frameCount     = 30;
         static constexpr uint32_t delay          = 80;
-        static constexpr std::string mergeMode   = "S2W1C";
+        static constexpr const char* mergeMode   = "S2W1C";
         static constexpr const char* outputPath  = "output.gif";
         static constexpr uint32_t threadCount    = 0;  // 0 means auto-detect
         static constexpr uint32_t disposalMethod = 3;
