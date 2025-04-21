@@ -3,7 +3,6 @@
 
 #include <cstring>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include "log.h"
@@ -16,18 +15,21 @@ namespace CLIUtils {
 
 class CLIArgs {
   public:
-    explicit CLIArgs(const std::vector<std::string>& args) {
-        m_argc = args.size();
-        m_argv = new char*[m_argc];
-        for (int i = 0; i < m_argc; ++i) {
-            m_argv[i] = new char[args[i].length() + 1];
-            std::strcpy(m_argv[i], args[i].c_str());
+    explicit CLIArgs(char* arg0, const std::vector<std::string>& args) {
+        m_argc    = args.size() + 1;
+        m_argv    = new char*[m_argc];
+        m_argv[0] = new char[strlen(arg0) + 1];
+        std::strcpy(m_argv[0], arg0);
+        for (int i = 1; i < m_argc; ++i) {
+            m_argv[i] = new char[args[i - 1].length() + 1];
+            std::strcpy(m_argv[i], args[i - 1].c_str());
         }
     }
 
-#ifdef _WIN32
+#if (defined(_WIN32) && defined(CLI_MAIN))
 
-    CLIArgs(int argc, wchar_t** wargv) : m_argc(argc) {
+    CLIArgs(int argc, wchar_t** wargv)
+        : m_argc(argc) {
         m_argc = argc;
         m_argv = new char*[m_argc];
         for (int i = 0; i < m_argc; ++i) {
@@ -38,7 +40,7 @@ class CLIArgs {
         }
     }
 
-#endif  // _WIN32
+#endif  // _WIN32 && CLI_MAIN
 
     ~CLIArgs() {
         for (int i = 0; i < m_argc; ++i) {
@@ -47,55 +49,76 @@ class CLIArgs {
         delete[] m_argv;
     }
 
-    operator char**() {
-        return m_argv;
-    }
+    operator char**() { return m_argv; }
 
     [[nodiscard]] inline int
-    argc() const {
-        return m_argc;
-    }
+    argc() const { return m_argc; }
 
     [[nodiscard]] inline char**
-    argv() const {
-        return m_argv;
-    }
+    argv() const { return m_argv; }
 
   private:
     int m_argc    = 0;
     char** m_argv = nullptr;
 };
 
-inline CLIUtils::CLIArgs
-mockCommandLine(std::vector<std::string> args) {
-    auto ret = CLIUtils::CLIArgs(args);
-    GeneralLogger::warn("Mocking command line arguments.");
-    for (int i = 0; i < ret.argc(); ++i) {
-        GeneralLogger::warn(ret[i], GeneralLogger::STEP);
-    }
-    return ret;
-}
-
 }  // namespace CLIUtils
 
 #ifdef CLI_MAIN
 
-#ifdef _WIN32
+extern const std::vector<std::string> g_mockArgs;
 
-#define main main_
+// main_orig: main function defined in .cpp source file
+// main_handled: wrap main_orig if needed
+// main_mocked: implementation of main_handled, mocks command line args
+// wmain / main: actual entry point
+
+/// @brief Mocked command line arguments for testing purposes.
+/// @note This is a placeholder and should be replaced with actual arguments.
+/// @note Not including the first argument (program name)
 
 int
-main(int, char**);
+main_orig(int, char**);
+
+#ifdef CLI_MAIN_MOCK
+#define main_handled main_mocked
+
+int
+main_mocked(int argc, char** argv) {
+    auto ret = CLIUtils::CLIArgs(argv[0], g_mockArgs);
+    GeneralLogger::warn("Mocking command line arguments.");
+    for (const auto& arg : g_mockArgs) {
+        GeneralLogger::warn(arg, GeneralLogger::STEP);
+    }
+    return main_orig(ret.argc(), ret.argv());
+}
+
+#else  // CLI_MAIN_MOCK
+
+#define main_handled main_orig
+
+#endif  // CLI_MAIN_MOCK
+
+#ifdef _WIN32
 
 int
 wmain(int argc, wchar_t** argv) {
     SetConsoleOutputCP(CP_UTF8);
     CLIUtils::CLIArgs args(argc, argv);
-    return main(args.argc(), args.argv());
+    return main_handled(args.argc(), args.argv());
+}
+
+#else  // _WIN32
+
+int
+main(int argc, char** argv) {
+    return main_handled(argc, argv);
 }
 
 #endif  // _WIN32
 
-#endif  // CLI_UTILS_HANDLE_MAIN
+#define main main_orig
+
+#endif  // CLI_MAIN
 
 #endif  // ENTRY_UTILS_H

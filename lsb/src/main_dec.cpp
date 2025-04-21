@@ -3,25 +3,21 @@
 #include "options.h"
 
 #define CLI_MAIN
+#ifdef MOCK_COMMAND_LINE
+#define CLI_MAIN_MOCK
+#endif  // MOCK_COMMAND_LINE
 #include "cli_utils.h"
+
+const std::vector<std::string> g_mockArgs{
+    "../../images/enc-output.gif",
+    "-o",
+    "dec-output",
+    "-d",
+    "../../images",
+};
 
 int
 main(int argc, char** argv) {
-
-#ifdef MOCK_COMMAND_LINE
-    auto mocked = CLIUtils::mockCommandLine({
-        argv[0],
-        "../../images/enc-output.gif",
-        "-o",
-        "dec-output",
-        "-d",
-        "../../images",
-    });
-
-    argv = mocked.argv();
-    argc = mocked.argc();
-#endif  // MOCK_COMMAND_LINE
-
     auto options = GIFLsb::DecodeOptions::parseArgs(argc, argv);
     if (!options) {
         return 1;

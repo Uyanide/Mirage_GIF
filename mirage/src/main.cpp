@@ -3,29 +3,20 @@
 #include "imsq.h"
 
 #define CLI_MAIN
+#ifdef MOCK_COMMAND_LINE
+#define CLI_MAIN_MOCK
+#endif  // MOCK_COMMAND_LINE
 #include "cli_utils.h"
+
+const std::vector<std::string> g_mockArgs{
+    "../../images/气气.gif",
+    "../../images/马达.gif",
+    "-o",
+    "../../images/mirage-output.gif",
+};
 
 int
 main(int argc, char** argv) {
-
-#ifdef MOCK_COMMAND_LINE
-    auto mocked = CLIUtils::mockCommandLine(
-        {argv[0],
-         "../../images/气气.gif",
-         "../../images/马达.gif",
-         "-o",
-         "../../images/mirage-output.gif",
-         "-x",
-         "2048",
-         "-y",
-         "2048",
-         "-f",
-         "1000"});
-
-    argc = mocked.argc();
-    argv = mocked.argv();
-#endif  // MOCK_COMMAND_LINE
-
     auto options = GIFMirage::Options::parseArgs(argc, argv);
     if (!options) {
         return 1;
