@@ -197,15 +197,14 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
         return true;
     } catch (const EOFException&) {
         GeneralLogger::error("End of file reached before decoding completed.");
-        return false;
     } catch (const DecodingException& e) {
         GeneralLogger::error("Decoding error: " + string(e.what()));
-        return false;
     } catch (const std::ios_base::failure& e) {
         GeneralLogger::error("I/O error: " + string(e.what()));
-        return false;
     } catch (const std::exception& e) {
         GeneralLogger::error("Unexpected error: " + string(e.what()));
-        return false;
     }
+    args.outputFile->close();
+    args.outputFile->deleteFile();
+    return false;
 }

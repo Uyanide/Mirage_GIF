@@ -26,7 +26,7 @@ class CLIArgs {
         }
     }
 
-#if (defined(_WIN32) && defined(CLI_MAIN))
+#if defined(_WIN32)
 
     CLIArgs(int argc, wchar_t** wargv)
         : m_argc(argc) {
@@ -40,7 +40,7 @@ class CLIArgs {
         }
     }
 
-#endif  // _WIN32 && CLI_MAIN
+#endif  // _WIN32
 
     ~CLIArgs() {
         for (int i = 0; i < m_argc; ++i) {
@@ -64,23 +64,29 @@ class CLIArgs {
 
 }  // namespace CLIUtils
 
-#ifdef CLI_MAIN
+#ifdef CLI_MAIN_MOCK
 
+/**
+ * @brief Mocked command line arguments for testing purposes.
+ * @note This is a placeholder and should be replaced with actual arguments.
+ * @note Not including the first argument (program name)
+ */
 extern const std::vector<std::string> g_mockArgs;
+
+#endif  // CLI_MAIN_MOCK
+
+#ifdef CLI_MAIN
 
 // main_orig: main function defined in .cpp source file
 // main_handled: wrap main_orig if needed
 // main_mocked: implementation of main_handled, mocks command line args
 // wmain / main: actual entry point
 
-/// @brief Mocked command line arguments for testing purposes.
-/// @note This is a placeholder and should be replaced with actual arguments.
-/// @note Not including the first argument (program name)
-
 int
 main_orig(int, char**);
 
 #ifdef CLI_MAIN_MOCK
+
 #define main_handled main_mocked
 
 int

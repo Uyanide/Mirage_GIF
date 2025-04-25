@@ -271,6 +271,7 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
             delete encoder;
             return false;
         }
+        args.outputFile->close();
         GeneralLogger::info("Output file: " + args.outputFile->getFilePath());
         delete encoder;
         return true;
@@ -279,6 +280,8 @@ GIFMirage::gifMirageEncode(const GIFMirage::Options& args) {
     } catch (...) {
         GeneralLogger::error("Failed to write GIF file: unknown error");
     }
+    args.outputFile->close();
+    args.outputFile->deleteFile();
     delete encoder;
     return false;
 }

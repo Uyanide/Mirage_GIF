@@ -558,6 +558,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
         if (lastProgress < 1.0) {
             GeneralLogger::info("Progress: 100.00%", GeneralLogger::STEP);
         }
+        args.outputFile->close();
         GeneralLogger::info("Encoding completed successfully.");
         GeneralLogger::info("Generated frames: " + std::to_string(generatedFrames));
         GeneralLogger::info("Output file: " + args.outputFile->getFilePath());
@@ -571,5 +572,7 @@ GIFLsb::gifLsbEncode(const EncodeOptions& args) noexcept {
     } catch (...) {
         GeneralLogger::error("Unknown error occurred.");
     }
+    args.outputFile->close();
+    args.outputFile->deleteFile();
     return false;
 }

@@ -17,11 +17,11 @@ const std::vector<std::string> g_mockArgs{
 
 int
 main(int argc, char** argv) {
-    auto options = GIFLsb::EncodeOptions::parseArgs(argc, argv);
-    if (!options) {
+    if (!GIFImage::ImageSequence::initDecoder(argv[0])) {
         return 1;
     }
-    if (!GIFImage::ImageSequence::initDecoder(argv[0])) {
+    auto options = GIFLsb::EncodeOptions::parseArgs(argc, argv);
+    if (!options) {
         return 1;
     }
     if (!GIFLsb::gifLsbEncode(*options)) {

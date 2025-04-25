@@ -3,7 +3,7 @@
 #include "imsq.h"
 // when
 #ifdef IMSQ_USE_GDIPLUS
-// since GDI + will read the whole image into memory on first access anyway.
+// since GDI+ always reads the whole image into memory on first access anyway.
 
 #include "imsq_exception.h"
 #include "imsq_stream.h"
