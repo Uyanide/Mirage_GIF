@@ -13,6 +13,17 @@
 
 namespace CLIUtils {
 
+#ifdef _WIN32
+
+void
+wstr2str(const wchar_t* wstr, char*& str) {
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
+    str             = new char[size_needed]{};
+    WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, size_needed, nullptr, nullptr);
+}
+
+#endif  // _WIN32
+
 class CLIArgs {
   public:
     explicit CLIArgs(char* arg0, const std::vector<std::string>& args) {
@@ -33,10 +44,7 @@ class CLIArgs {
         m_argc = argc;
         m_argv = new char*[m_argc];
         for (int i = 0; i < m_argc; ++i) {
-            int size_needed = WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, nullptr, 0, nullptr, nullptr);
-            m_argv[i]       = new char[size_needed + 1];
-            WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, m_argv[i], size_needed, nullptr, nullptr);
-            m_argv[i][size_needed] = '\0';
+            wstr2str(wargv[i], m_argv[i]);
         }
     }
 

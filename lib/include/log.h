@@ -7,7 +7,7 @@
 
 namespace GeneralLogger {
 
-static constexpr const char* colorInfoMsg[]{"\033[32m", "\033[0m", "\033[0m"};
+inline constexpr const char* colorInfoMsg[]{"\033[32m", "\033[0m", "\033[0m"};
 
 enum LogIndent : uint32_t {
     GENERAL = 0,

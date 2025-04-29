@@ -51,7 +51,7 @@ struct PixelBGRA {
     }
 } PACKED;
 
-static_assert(sizeof(PixelBGRA) == 4, "PixelBGRA size is not 4 bytes!");
+static_assert(sizeof(PixelBGRA) == 4, "PixelBGRA should have size of 4 bytes");
 
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -60,7 +60,7 @@ static_assert(sizeof(PixelBGRA) == 4, "PixelBGRA size is not 4 bytes!");
 #include <functional>
 
 struct PixelBRAGHash {
-    std::size_t
+    inline std::size_t
     operator()(const PixelBGRA& pixel) const {
         return std::hash<uint32_t>()(pixel.toU32());
     }
