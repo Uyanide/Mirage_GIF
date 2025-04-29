@@ -12,6 +12,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "defer.h"
 #include "file_utils.h"
 #include "gdi_initializer.h"
 #include "imsq.h"
@@ -892,7 +893,7 @@ GIFImage::ImageSequence::parseBase64(const string& base64) noexcept {
     IStream* pStream        = nullptr;
     Gdiplus::Bitmap* bitmap = nullptr;
 
-    const auto defer = [&]() {
+    const Defer defer([&]() {
         if (hGlobal) {
             if (GlobalFlags(hGlobal) & GMEM_LOCKCOUNT) {
                 GlobalUnlock(hGlobal);
@@ -903,7 +904,7 @@ GIFImage::ImageSequence::parseBase64(const string& base64) noexcept {
             pStream->Release();
         }
         delete bitmap;
-    };
+    });
 
     try {
         if (base64.empty()) {
@@ -956,7 +957,6 @@ GIFImage::ImageSequence::parseBase64(const string& base64) noexcept {
     } catch (...) {
         GeneralLogger::error("Unknown error parsing base64 image.");
     }
-    defer();
     return result;
 }
 

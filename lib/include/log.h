@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string_view>
 
 namespace GeneralLogger {
 
@@ -15,9 +16,9 @@ enum LogIndent : uint32_t {
 };
 
 #ifdef GENERAL_LOGGER_DISABLE
-#define CHECK_DISABLE return;
+#define ENSURE_ENABLE return;
 #else
-#define CHECK_DISABLE
+#define ENSURE_ENABLE
 #endif
 
 inline void
@@ -25,7 +26,7 @@ info(const std::string_view& msg,
      const LogIndent indent  = GENERAL,
      const bool color        = true,
      std::ostream* logStream = &std::cerr) {
-    CHECK_DISABLE
+    ENSURE_ENABLE
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[92m" : "") << "[INFO] ";
@@ -38,7 +39,7 @@ warn(const std::string_view& msg,
      const LogIndent indent  = GENERAL,
      const bool color        = true,
      std::ostream* logStream = &std::cerr) {
-    CHECK_DISABLE
+    ENSURE_ENABLE
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[93m" : "") << "[WARN] ";
@@ -51,7 +52,7 @@ error(const std::string_view& msg,
       const LogIndent indent  = GENERAL,
       const bool color        = true,
       std::ostream* logStream = &std::cerr) {
-    CHECK_DISABLE
+    ENSURE_ENABLE
     if (logStream == nullptr) return;
 
     *logStream << (color ? "\033[91m" : "") << "[ERROR] ";
@@ -59,7 +60,7 @@ error(const std::string_view& msg,
     *logStream << (color ? "\033[31m" : "") << msg << (color ? "\033[0m\n" : "\n");
 }
 
-#undef CHECK_DISABLE
+#undef ENSURE_ENABLE
 
 };  // namespace GeneralLogger
 

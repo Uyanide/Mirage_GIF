@@ -1,3 +1,4 @@
+#include "defer.h"
 #ifdef IMSQ_USE_FFMPEG
 
 #include <string>
@@ -79,12 +80,12 @@ ImageSequenceFFmpegImpl::ImageSequenceFFmpegImpl(const string& filename) {
     AVPacket* packet           = nullptr;
     AVFrame* frame             = nullptr;
 
-    const auto defer = [&]() {
+    const Defer defer([&]() {
         if (frame) av_frame_free(&frame);
         if (packet) av_packet_free(&packet);
         if (codecCtx) avcodec_free_context(&codecCtx);
         if (formatCtx) avformat_close_input(&formatCtx);
-    };
+    });
 
     try {
         // open file
@@ -185,12 +186,9 @@ ImageSequenceFFmpegImpl::ImageSequenceFFmpegImpl(const string& filename) {
             }
             av_packet_unref(packet);
         }
-        defer();
     } catch (const std::exception& e) {
-        defer();
         throw;
     } catch (...) {
-        defer();
         throw ImageParseException("Unknown error");
     }
 }
@@ -294,11 +292,11 @@ ImageSequence::drawText(vector<PixelBGRA>& buffer,
     AVFrame* in_frame           = nullptr;
     AVFrame* out_frame          = nullptr;
 
-    const auto defer = [&]() {
+    const Defer defer([&]() {
         if (in_frame) av_frame_free(&in_frame);
         if (out_frame) av_frame_free(&out_frame);
         if (filter_graph) avfilter_graph_free(&filter_graph);
-    };
+    });
 
     try {
         if (buffer.empty() || width == 0 || height == 0 || textHeightRatio <= 0.0 || textHeightRatio > 1.0) {
@@ -444,14 +442,12 @@ ImageSequence::drawText(vector<PixelBGRA>& buffer,
                    width * sizeof(PixelBGRA));
         }
 
-        defer();
         return true;
     } catch (const std::exception& e) {
         GeneralLogger::error("Error drawing text: " + string(e.what()));
     } catch (...) {
         GeneralLogger::error("Unknown error drawing text.");
     }
-    defer();
     return false;
 }
 
@@ -466,7 +462,7 @@ ImageSequence::parseBase64(const string& base64) noexcept {
     AVFrame* frame             = nullptr;
     uint8_t* buffer            = nullptr;
 
-    const auto defer = [&]() {
+    const Defer defer([&]() {
         if (frame) av_frame_free(&frame);
         if (packet) av_packet_free(&packet);
         if (codecCtx) avcodec_free_context(&codecCtx);
@@ -477,7 +473,7 @@ ImageSequence::parseBase64(const string& base64) noexcept {
             av_freep(&buffer);
         }
         if (formatCtx) avformat_close_input(&formatCtx);
-    };
+    });
 
     try {
         const auto pos = base64.find("base64,");
@@ -626,7 +622,6 @@ ImageSequence::parseBase64(const string& base64) noexcept {
     } catch (...) {
         GeneralLogger::error("Unknown error parsing base64 image");
     }
-    defer();
     return result;
 }
 
