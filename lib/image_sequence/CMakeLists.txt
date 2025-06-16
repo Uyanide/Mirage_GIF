@@ -29,7 +29,7 @@ if(DEFINED IMSQ_USE_NATIVE)
 elseif(WIN32)
     find_package(Webp CONFIG REQUIRED)
 
-    list(APPEND IMSQ_LINK_LIBRARIES WebP::webp WebP::webpdecoder WebP::webpdemux gdiplus leptonica)
+    list(APPEND IMSQ_LINK_LIBRARIES WebP::webp WebP::webpdecoder WebP::webpdemux gdiplus)
     list(APPEND IMSQ_SRC
         ${CMAKE_CURRENT_LIST_DIR}/src/imsq_gdi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/imsqs_gdi.cpp
