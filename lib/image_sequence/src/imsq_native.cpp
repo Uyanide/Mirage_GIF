@@ -8,7 +8,7 @@
 
 class ImageSequenceNativeImpl : public GIFImage::ImageSequence {
   public:
-    ImageSequenceNativeImpl(const std::span<const std::span<const PixelBGRA>>& frames,
+    ImageSequenceNativeImpl(const std::vector<std::vector<PixelBGRA>>& frames,
                             const std::span<const uint32_t>& delays,
                             uint32_t width,
                             uint32_t height) noexcept
@@ -62,7 +62,7 @@ class ImageSequenceNativeImpl : public GIFImage::ImageSequence {
 };
 
 GIFImage::ImageSequence::Ref
-GIFImage::ImageSequence::load(const std::span<const std::span<const PixelBGRA>>& frames,
+GIFImage::ImageSequence::load(const std::vector<std::vector<PixelBGRA>>& frames,
                               const std::span<const uint32_t>& delays,
                               uint32_t width,
                               uint32_t height) noexcept {

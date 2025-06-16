@@ -1,3 +1,4 @@
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -108,7 +109,11 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
             gifOptions.threadCount = getThreadCount();
         }
 
-        gifOptions.ensureValid();
+        const auto ret = gifOptions.ensureValid();
+
+        if (ret) {
+            throw OptionInvalidException(std::string(*ret));
+        }
 
         return gifOptions;
     } catch (const cxxopts::exceptions::parsing& e) {
@@ -124,28 +129,29 @@ EncodeOptions::parseArgs(int argc, char** argv) noexcept {
     return std::nullopt;
 }
 
-void
+std::optional<std::string>
 EncodeOptions::ensureValid() {
     if (!image) {
-        throw OptionInvalidException("Invalid image file.");
+        return "Invalid image file.";
     }
     if (!file) {
-        throw OptionInvalidException("Invalid file to encrypt.");
+        return "Invalid file to encrypt.";
     }
     if (!outputFile) {
-        throw OptionInvalidException("Invalid output file.");
+        return "Invalid output file.";
     }
     if (numColors < Limits::MIN_NUM_COLORS || numColors > Limits::MAX_NUM_COLORS) {
-        throw OptionInvalidException("Number of colors must be between " + std::to_string(Limits::MIN_NUM_COLORS) +
-                                     " and " + std::to_string(Limits::MAX_NUM_COLORS));
+        return "Number of colors must be between " + std::to_string(Limits::MIN_NUM_COLORS) +
+               " and " + std::to_string(Limits::MAX_NUM_COLORS);
     }
     if (!transparency && transparentThreshold > 0) {
-        throw OptionInvalidException("Transparent threshold must be 0 when transparency is disabled");
+        return "Transparent threshold must be 0 when transparency is disabled";
     }
     if (transparentThreshold > 255) {
-        throw OptionInvalidException("Transparent threshold must be between 0 and 255");
+        return "Transparent threshold must be between 0 and 255";
     }
     if (singleFrame && transparency) {
-        throw OptionInvalidException("Transparency should be disabled when generating a single frame GIF");
+        return "Transparency should be disabled when generating a single frame GIF";
     }
+    return std::nullopt;
 }

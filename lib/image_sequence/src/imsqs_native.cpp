@@ -4,7 +4,7 @@ using namespace GIFImage;
 
 class ImageSequenceStreamNativeImpl : public ImageSequenceStream {
   public:
-    explicit ImageSequenceStreamNativeImpl(const std::span<const std::span<const PixelBGRA>>& frames,
+    explicit ImageSequenceStreamNativeImpl(const std::vector<std::vector<PixelBGRA>>& frames,
                                            const std::span<const uint32_t>& delays,
                                            const std::span<const uint32_t> widths,
                                            const std::span<const uint32_t> heights) noexcept {
@@ -45,7 +45,7 @@ class ImageSequenceStreamNativeImpl : public ImageSequenceStream {
 };
 
 ImageSequenceStream::Ref
-ImageSequenceStream::load(const std::span<const std::span<const PixelBGRA>>& frames,
+ImageSequenceStream::load(const std::vector<std::vector<PixelBGRA>>& frames,
                           const std::span<const uint32_t>& delays,
                           const std::span<const uint32_t> widths,
                           const std::span<const uint32_t> heights) noexcept {

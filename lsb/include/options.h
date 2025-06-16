@@ -17,15 +17,12 @@ class DecodeOptions {
     GIFImage::ImageSequenceStream::Ref image;
     std::string imagePath;
     NaiveIO::FileWriter::Ref outputFile;
-    std::string outputName;
-    std::string outputDirectory;  // ends with '/'
-    std::string tempFileName;
 
   public:
     static std::optional<DecodeOptions>
     parseArgs(int argc, char** argv) noexcept;
 
-    void
+    std::optional<std::string>
     ensureValid();
 };
 
@@ -66,7 +63,7 @@ class EncodeOptions {
     static std::optional<EncodeOptions>
     parseArgs(int argc, char** argv) noexcept;
 
-    void
+    std::optional<std::string>
     ensureValid();
 };
 }  // namespace GIFLsb

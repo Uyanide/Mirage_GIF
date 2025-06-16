@@ -149,18 +149,14 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
         GeneralLogger::info("File name: " + headerData.fileName, GeneralLogger::STEP);
         GeneralLogger::info("MIME type: " + headerData.mimeType, GeneralLogger::STEP);
 
+        args.outputFile->write({reinterpret_cast<const uint8_t*>(headerData.fileName.data()), headerData.fileName.size()});
+        args.outputFile->write(0);
+        args.outputFile->write({reinterpret_cast<const uint8_t*>(headerData.mimeType.data()), headerData.mimeType.size()});
+        args.outputFile->write(0);
+        const char startOfFile[] = "START_OF_FILE";
+        args.outputFile->write({reinterpret_cast<const uint8_t*>(startOfFile), sizeof(startOfFile) - 1});
+
         GeneralLogger::info("Decoding frames...");
-        // std::filesystem::path outputPath;
-        string fileName;
-        if (!args.outputName.empty()) {
-            fileName = NaiveIO::replaceExtName(args.outputName, NaiveIO::getExtName(headerData.fileName));
-        } else if (!headerData.fileName.empty() && NaiveIO::isValidFileName(headerData.fileName)) {
-            fileName = headerData.fileName;
-        } else {
-            fileName = "decrypted_" +
-                       std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) +
-                       NaiveIO::getExtName(headerData.fileName);
-        }
 
         vector<uint8_t> buffer(WRITE_BUFFER_SIZE);
         size_t bufferPos    = 0;
@@ -188,9 +184,6 @@ GIFLsb::gifLsbDecode(const DecodeOptions& args) noexcept {
         args.outputFile->close();
         if (lastProgress < 1.0) {
             GeneralLogger::info("Progress: 100.00%", GeneralLogger::DETAIL);
-        }
-        if (!args.outputFile->rename(fileName)) {
-            throw DecodingException("Failed to rename output file.");
         }
         GeneralLogger::info("Decoding completed successfully.");
         GeneralLogger::info("Output file: " + args.outputFile->getFilePath());

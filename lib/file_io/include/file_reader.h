@@ -30,6 +30,9 @@ class FileReader {
     static Ref
     create(const std::string& fileName) noexcept;
 
+    static Ref
+    createFromMemory(const std::span<uint8_t>& data, const std::string& fileName) noexcept;
+
     virtual ~FileReader() = default;
 
     virtual bool

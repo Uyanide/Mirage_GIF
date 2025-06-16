@@ -8,7 +8,6 @@
 
 #include "def.h"
 
-
 namespace GIFImage {
 
 // Forward declaration
@@ -27,7 +26,7 @@ class ImageSequence {
     read(const std::string& filename) noexcept;
 
     static Ref
-    load(const std::span<const std::span<const PixelBGRA>>& frames,
+    load(const std::vector<std::vector<PixelBGRA>>& frames,
          const std::span<const uint32_t>& delays,
          uint32_t width,
          uint32_t height) noexcept;

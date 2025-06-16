@@ -8,7 +8,6 @@
 
 #include "def.h"
 
-
 namespace GIFImage {
 
 class ImageSequenceStream;
@@ -35,7 +34,7 @@ class ImageSequenceStream {
     read(const std::string&) noexcept;
 
     static Ref
-    load(const std::span<const std::span<const PixelBGRA>>& frames,
+    load(const std::vector<std::vector<PixelBGRA>>& frames,
          const std::span<const uint32_t>& delays,
          const std::span<const uint32_t> widths,
          const std::span<const uint32_t> heights) noexcept;

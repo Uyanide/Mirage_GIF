@@ -69,7 +69,11 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
         gifOptions.outputDirectory = result.count("directory") ? result["directory"].as<string>() : ".";
         gifOptions.tempFileName    = genTempName();
         gifOptions.outputFile      = NaiveIO::FileWriter::create(gifOptions.outputDirectory + '/' + gifOptions.tempFileName);
-        gifOptions.ensureValid();
+
+        const auto ret = gifOptions.ensureValid();
+        if (ret) {
+            throw OptionInvalidException(std::string(*ret));
+        }
 
         return gifOptions;
     } catch (const cxxopts::exceptions::parsing& e) {
@@ -91,18 +95,19 @@ GIFLsb::DecodeOptions::parseArgs(int argc, char** argv) noexcept {
     }
 }
 
-void
+std::optional<std::string>
 GIFLsb::DecodeOptions::ensureValid() {
     if (!image) {
-        throw OptionInvalidException("Invalid image file.");
+        return "Invalid image file.";
     }
     if (!outputFile) {
-        throw OptionInvalidException("Invalid output filename or directory.");
+        return "Invalid output filename or directory.";
     }
     if (!outputName.empty() && !NaiveIO::isValidFileName(outputName)) {
-        throw OptionInvalidException("Invalid output filename: " + outputName);
+        return "Invalid output filename: " + outputName;
     }
     if (outputDirectory.back() != '/' && outputDirectory.back() != '\\') {
         outputDirectory.push_back('/');
     }
+    return std::nullopt;
 }

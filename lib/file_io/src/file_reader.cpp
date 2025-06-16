@@ -98,3 +98,57 @@ FileReader::create(const string& fileName) noexcept {
     }
     return nullptr;
 }
+
+class FileReaderMemoryImpl final : public FileReader {
+  public:
+    FileReaderMemoryImpl(const std::span<uint8_t>& data, const string& fileName)
+        : m_data(data), m_fileName(fileName), m_position(0) {}
+
+    [[nodiscard]] bool
+    isOpen() const override {
+        return true;  // Always open for memory
+    }
+
+    bool
+    close() override {
+        return true;  // No resources to release
+    }
+
+    [[nodiscard]] bool
+    isEOF() const override {
+        return m_position >= m_data.size();
+    }
+
+    [[nodiscard]] size_t
+    getSize() override {
+        return m_data.size();
+    }
+
+    size_t
+    read(std::span<uint8_t>& buffer) override {
+        if (isEOF()) {
+            return 0;
+        }
+        size_t bytesToRead = std::min(buffer.size(), m_data.size() - m_position);
+        std::copy(m_data.data() + m_position, m_data.data() + m_position + bytesToRead, buffer.data());
+        m_position += bytesToRead;
+        return bytesToRead;
+    }
+
+  private:
+    std::span<uint8_t> m_data;
+    string m_fileName;
+    size_t m_position;
+};
+
+FileReader::Ref
+FileReader::createFromMemory(const std::span<uint8_t>& data, const std::string& fileName) noexcept {
+    try {
+        return std::make_unique<FileReaderMemoryImpl>(data, fileName);
+    } catch (std::exception& e) {
+        GeneralLogger::error("Failed to read file: " + string(e.what()));
+    } catch (...) {
+        GeneralLogger::error("Failed to read file.");
+    }
+    return nullptr;
+}

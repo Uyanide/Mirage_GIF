@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GIFLsb
+project(GIFLsb_native
     LANGUAGES CXX
 )
 
@@ -16,79 +16,43 @@ if(NOT LIB_DIR)
     set(LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/../lib)
 endif()
 
-if(NOT GIF_ENC_BUILT)
-    add_subdirectory(${LIB_DIR}/gif_enc ${CMAKE_BINARY_DIR}/lib_gif_enc)
-    set(GIF_ENC_BUILT TRUE)
-endif()
-
-if(NOT IMAGE_SEQUENCE_BUILT)
-    add_subdirectory(${LIB_DIR}/image_sequence ${CMAKE_BINARY_DIR}/lib_image_sequence)
-    set(IMAGE_SEQUENCE_BUILT TRUE)
-endif()
-
-if(NOT FILE_IO_BUILT)
-    add_subdirectory(${LIB_DIR}/file_io ${CMAKE_BINARY_DIR}/lib_file_io)
-    set(FILE_IO_BUILT TRUE)
-endif()
-
 if(NOT EXECUTABLE_OUTPUT_PATH)
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/../bin)
 endif()
 
-add_executable(GIFLsb-enc
+if(NOT LIBRARY_OUTPUT_PATH)
+    set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/../bin)
+endif()
+
+set(SOURCE_FILES "")
+list(APPEND SOURCE_FILES
+    ${CMAKE_CURRENT_LIST_DIR}/src/main_lib.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/gif_lsb_enc.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/main_enc.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/MimeTypes.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/options_enc.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mark.cpp
-)
-
-target_link_directories(GIFLsb-enc PRIVATE
-    ${CMAKE_BINARY_DIR}/lib_gif_enc
-    ${CMAKE_BINARY_DIR}/lib_image_sequence
-    ${CMAKE_BINARY_DIR}/lib_file_io
-)
-
-target_link_libraries(GIFLsb-enc PRIVATE
-    naive_gif
-    naive_file_io
-    image_sequence)
-
-target_include_directories(GIFLsb-enc PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/include
-    ${LIB_DIR}/include
-    ${LIB_DIR}/gif_enc/include
-    ${LIB_DIR}/image_sequence/include
-    ${LIB_DIR}/file_io/include
-)
-
-target_compile_options(GIFLsb-enc PRIVATE ${GLOBAL_COMPILE_OPTIONS})
-
-target_link_options(GIFLsb-enc PRIVATE ${GLOBAL_LINK_OPTIONS})
-
-target_compile_definitions(GIFLsb-enc PRIVATE ${GLOBAL_COMPILE_DEFINITIONS})
-
-add_executable(GIFLsb-dec
     ${CMAKE_CURRENT_LIST_DIR}/src/gif_lsb_dec.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/main_dec.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/options_dec.cpp
 )
 
-target_link_directories(GIFLsb-dec PRIVATE
-    ${CMAKE_BINARY_DIR}/lib_image_sequence
-)
-
-target_link_libraries(GIFLsb-dec PRIVATE image_sequence naive_file_io)
-
-target_include_directories(GIFLsb-dec PRIVATE
+set(INCLUDE_DIRS "")
+list(APPEND INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${LIB_DIR}/include
-    ${LIB_DIR}/image_sequence/include
-    ${LIB_DIR}/file_io/include
 )
 
-target_compile_options(GIFLsb-dec PRIVATE ${GLOBAL_COMPILE_OPTIONS})
+set(COMPILE_DEFINITIONS "")
+set(LINK_LIBRARIES "")
 
-target_link_options(GIFLsb-dec PRIVATE ${GLOBAL_LINK_OPTIONS})
+set(IMSQ_USE_NATIVE TRUE)
+include(${LIB_DIR}/gif_enc/CMakeLists.txt)
+include(${LIB_DIR}/image_sequence/CMakeLists.txt)
+include(${LIB_DIR}/file_io/CMakeLists.txt)
 
-target_compile_definitions(GIFLsb-dec PRIVATE ${GLOBAL_COMPILE_DEFINITIONS})
+add_library(giflsb SHARED ${SOURCE_FILES})
+
+target_include_directories(giflsb PRIVATE ${INCLUDE_DIRS})
+
+target_compile_options(giflsb PRIVATE ${GLOBAL_COMPILE_OPTIONS})
+
+target_link_options(giflsb PRIVATE ${GLOBAL_LINK_OPTIONS})
+
+target_compile_definitions(giflsb PRIVATE ${GLOBAL_COMPILE_DEFINITIONS} ${COMPILE_DEFINITIONS})
