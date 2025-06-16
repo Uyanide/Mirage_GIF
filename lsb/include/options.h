@@ -9,6 +9,7 @@
 #include "file_writer.h"
 #include "imsq.h"
 #include "imsq_stream.h"
+#include "mark.h"
 
 namespace GIFLsb {
 
@@ -47,7 +48,7 @@ class EncodeOptions {
     NaiveIO::FileWriter::Ref outputFile;
     std::string imagePath;
     std::string filePath;
-    std::string markText;
+    std::string markText          = GIFLsb::markIdentifier;
     bool disableDither            = false;
     bool transparency             = false;
     bool grayscale                = false;

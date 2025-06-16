@@ -1,6 +1,7 @@
 #include <cstring>
 #include <ostream>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 #include "def.h"
@@ -12,7 +13,14 @@
 #include "options.h"
 
 static std::stringstream errorStream{};
-std::ostream* GeneralLogger::logStream = &errorStream;
+std::ostream* GeneralLogger::logStream    = &errorStream;
+static constexpr uint32_t DEFAULT_THREADS = 4;
+
+static uint32_t
+getThreadCount() {
+    uint32_t threadCount = std::thread::hardware_concurrency();
+    return threadCount == 0 ? 1 : (threadCount > DEFAULT_THREADS ? DEFAULT_THREADS : threadCount);
+}
 
 EXTERN_C void EXPORT
 gifLsbEncode(
@@ -23,15 +31,15 @@ gifLsbEncode(
     uint32_t height,
     uint8_t* data,
     uint32_t dataSize,
-    char* markText,
     char* fileName,
     char* outputFilePath,
     char* errorMessage,
     uint32_t errorMessageSize,
     uint32_t colors,
     int32_t grayScale,
+    int32_t disableDither,
     int32_t transparency,
-    int32_t transparencyThreshold,
+    uint32_t transparencyThreshold,
     int32_t localPalette,
     int32_t single) {
     GIFLsb::EncodeOptions options;
@@ -51,16 +59,16 @@ gifLsbEncode(
     options.image                = GIFImage::ImageSequence::load(framesVec, {delays, frameCount}, width, height);
     options.imagePath            = "image";
     options.filePath             = fileName;
-    options.markText             = markText;
-    options.disableDither        = false;
+    options.disableDither        = disableDither != 0;
     options.transparency         = transparency != 0;
     options.grayscale            = grayScale != 0;
+    options.markText             = "";
     options.enableLocalPalette   = localPalette != 0;
     options.singleFrame          = single != 0;
     options.outputPath           = outputFilePath;
     options.numColors            = colors;
     options.transparentThreshold = transparencyThreshold;
-    options.threadCount          = 0;  // Auto-detect
+    options.threadCount          = getThreadCount();
 
     const auto ret = options.ensureValid();
     if (ret) {

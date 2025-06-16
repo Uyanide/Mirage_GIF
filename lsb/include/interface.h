@@ -1,6 +1,8 @@
 #ifndef GIF_LSB_INFTERFACE_H
 #define GIF_LSB_INFTERFACE_H
 
+#include <cstdint>
+
 #include "def.h"
 
 EXTERN_C void EXPORT
@@ -12,15 +14,15 @@ gifLsbEncode(
     uint32_t height,
     uint8_t* data,
     uint32_t dataSize,
-    char* markText,
     char* fileName,
     char* outputFilePath,
     char* errorMessage,
     uint32_t errorMessageSize,
     uint32_t colors,
     int32_t grayScale,
+    int32_t disableDither,
     int32_t transparency,
-    int32_t transparencyThreshold,
+    uint32_t transparencyThreshold,
     int32_t localPalette,
     int32_t single);
 

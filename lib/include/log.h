@@ -30,9 +30,10 @@ info(const std::string_view& msg,
     // ENSURE_ENABLE
     // if (logStream == nullptr) return;
 
-    // *logStream << (color ? "\033[92m" : "") << "[INFO] ";
-    // for (uint32_t i = 0; i < indent; i++) *logStream << "  ";
-    // *logStream << colorInfoMsg[indent] << msg << (color ? "\033[0m\n" : "\n");
+    auto logStream = &std::cerr;
+    *logStream << (color ? "\033[92m" : "") << "[INFO] ";
+    for (uint32_t i = 0; i < indent; i++) *logStream << "  ";
+    *logStream << colorInfoMsg[indent] << msg << (color ? "\033[0m\n" : "\n");
 }
 
 inline void
@@ -42,15 +43,16 @@ warn(const std::string_view& msg,
     // ENSURE_ENABLE
     // if (logStream == nullptr) return;
 
-    // *logStream << (color ? "\033[93m" : "") << "[WARN] ";
-    // for (uint32_t i = 0; i < indent; i++) *logStream << "  ";
-    // *logStream << (color ? "\033[33m" : "") << msg << (color ? "\033[0m\n" : "\n");
+    auto logStream = &std::cerr;
+    *logStream << (color ? "\033[93m" : "") << "[WARN] ";
+    for (uint32_t i = 0; i < indent; i++) *logStream << "  ";
+    *logStream << (color ? "\033[33m" : "") << msg << (color ? "\033[0m\n" : "\n");
 }
 
 inline void
 error(const std::string_view& msg,
       const LogIndent indent = GENERAL,
-      const bool color       = true) {
+      const bool color       = false) {
     ENSURE_ENABLE
     if (logStream == nullptr) return;
 
