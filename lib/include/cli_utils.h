@@ -15,11 +15,18 @@ namespace CLIUtils {
 
 #ifdef _WIN32
 
-void
+inline void
 wstr2str(const wchar_t* wstr, char*& str) {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
     str             = new char[size_needed]{};
     WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, size_needed, nullptr, nullptr);
+}
+
+inline void
+str2wstr(const char* str, wchar_t*& wstr) {
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str, -1, nullptr, 0);
+    wstr            = new wchar_t[size_needed]{};
+    MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, size_needed);
 }
 
 #endif  // _WIN32
