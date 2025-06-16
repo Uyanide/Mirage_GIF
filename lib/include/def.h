@@ -37,14 +37,14 @@ TOU8(const uint32_t x) {
 #endif  // _MSC_VER
 
 struct PixelBGRA {
-    uint8_t b, g, r, a;
+    uint8_t b, g, r, a = 255;
 
-    inline bool
+    inline constexpr bool
     operator==(const PixelBGRA& other) const {
         return b == other.b && g == other.g && r == other.r && a == other.a;
     }
 
-    [[nodiscard]] inline uint32_t
+    [[nodiscard]] inline constexpr uint32_t
     toU32() const {
         return (static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) |
                static_cast<uint32_t>(b);
@@ -59,7 +59,7 @@ static_assert(sizeof(PixelBGRA) == 4, "PixelBGRA should have size of 4 bytes");
 
 #include <functional>
 
-struct PixelBRAGHash {
+struct PixelBGRAHash {
     inline std::size_t
     operator()(const PixelBGRA& pixel) const {
         return std::hash<uint32_t>()(pixel.toU32());
@@ -94,7 +94,7 @@ preMultiply(const PixelBGRA& p) {
  */
 inline double
 colorDistance(const PixelBGRA& e1, const PixelBGRA& e2) {
-    int32_t rmean = ((int32_t)e1.r + (int32_t)e2.g) / 2;
+    int32_t rmean = ((int32_t)e1.r + (int32_t)e2.r) / 2;
     int32_t r     = (int32_t)e1.r - (int32_t)e2.r;
     int32_t g     = (int32_t)e1.g - (int32_t)e2.g;
     int32_t b     = (int32_t)e1.b - (int32_t)e2.b;

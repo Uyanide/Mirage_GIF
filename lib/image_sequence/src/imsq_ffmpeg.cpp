@@ -1,8 +1,8 @@
-#include "defer.h"
 #ifdef IMSQ_USE_FFMPEG
 
 #include <string>
 
+#include "defer.h"
 #include "imsq.h"
 #include "imsq_exception.h"
 #include "log.h"
