@@ -1,6 +1,10 @@
+#if 0
+#error "Deprecated, use native implementation instead."
+#else
 #include <allheaders.h>
 
 #include <algorithm>
+#include <climits>
 #include <numeric>
 #include <string>
 #include <unordered_set>
@@ -28,7 +32,7 @@ class QuantizerException : public std::exception {
 static vector<PixelBGRA>
 shrinkPalette(const vector<PixelBGRA>& palette, vector<uint8_t>& indices, uint32_t colorCount, uint32_t targetColorCount) noexcept {
     // find the top $targetColorCount used colors in the palette
-    std::vector<std::pair<uint32_t, uint32_t>> count(colorCount);
+    std::vector<std::pair<uint32_t, uint32_t> > count(colorCount);
     for (uint32_t i = 0; i < colorCount; i++) {
         count[i] = {i, 0};
     }
@@ -96,6 +100,10 @@ orderedDithering(const vector<PixelBGRA>& pixelsAdjusted,
                 // already the darkest
                 if (index == 0) continue;
                 const uint32_t grayPrev = sortedPaletteGray[index - 1].r;
+                if (grayPalette == grayPrev) {
+                    indices[idx] = index - 1;  // no dithering needed, just use the previous color
+                    continue;
+                }
                 if (const double ratio = static_cast<double>(grayOrig - grayPrev) / (grayPalette - grayPrev);
                     ratio < BayerMat[y % 4][x % 4]) {
                     indices[idx] = index - 1;
@@ -108,6 +116,10 @@ orderedDithering(const vector<PixelBGRA>& pixelsAdjusted,
                 // already the brightest
                 if (index == colorCount - 1) continue;
                 const uint32_t grayNext = sortedPaletteGray[index + 1].r;
+                if (grayPalette == grayNext) {
+                    indices[idx] = index + 1;  // no dithering needed, just use the next color
+                    continue;
+                }
                 if (const double ratio = static_cast<double>(grayOrig - grayPalette) / (grayNext - grayPalette);
                     ratio >= BayerMat[y % 4][x % 4]) {
                     indices[idx] = index + 1;
@@ -144,6 +156,9 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
         if (pixels.size() != width * height) {
             throw QuantizerException("Pixel data size does not match image dimensions: " +
                                      std::to_string(pixels.size()) + " != " + std::to_string(width * height));
+        }
+        if (pixels.size() >= UINT_MAX) {
+            throw QuantizerException("Pixel data size exceeds maximum limit: " + std::to_string(pixels.size()));
         }
 
         // Adjust input pixels
@@ -323,7 +338,7 @@ GIFImage::quantize(const span<PixelBGRA>& pixels,
 
 std::optional<PixelBGRA>
 GIFImage::findUnusedColor(const span<PixelBGRA>& pixels, const uint32_t step) noexcept {
-    std::unordered_set<PixelBGRA, PixelBRAGHash> usedColors{pixels.begin(), pixels.end()};
+    std::unordered_set<PixelBGRA, PixelBGRAHash> usedColors{pixels.begin(), pixels.end()};
     for (uint32_t r = 0; r < 256; r += step) {
         for (uint32_t g = 0; g < 256; g += step) {
             for (uint32_t b = 0; b < 256; b += step) {
@@ -336,3 +351,5 @@ GIFImage::findUnusedColor(const span<PixelBGRA>& pixels, const uint32_t step) no
     }
     return std::nullopt;  // No unused color found
 }
+
+#endif  // 1

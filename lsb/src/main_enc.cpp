@@ -9,10 +9,13 @@
 #include "cli_utils.h"
 
 const std::vector<std::string> g_mockArgs{
+    "../../images/mirage.gif",
     "../../images/气气.gif",
-    "../../images/slime.jpg",
     "-o",
     "../../images/enc-output",
+    "-p",
+    "1",
+    "-t",
 };
 
 int

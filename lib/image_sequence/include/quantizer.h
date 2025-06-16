@@ -17,21 +17,20 @@ enum DitherMode {
 };
 
 struct QuantizerResult {
-    bool isValid;
-    std::vector<PixelBGRA> palette;
-    std::vector<uint8_t> indices;
-    bool hasTransparency;
-    uint32_t width;
-    uint32_t height;
-    uint32_t transparencyIndex;
-    std::string errorMessage;
+    bool isValid = false;
+    std::vector<PixelBGRA> palette{};
+    std::vector<uint8_t> indices{};
+    bool hasTransparency       = false;
+    uint32_t width             = 0;
+    uint32_t height            = 0;
+    uint32_t transparencyIndex = 0;
+    std::string errorMessage   = "uninitialized";
 };
 
 /**
  * @brief Generic quantizer interface.
  *
  * @param[in] pixels        The input pixel data to be quantized.
- *                          PixelARGB should be considered as BGRA8888 in
  *                          uint8_t* format with 4 channels due to endianness.
  * @param[in] width         The width of the image.
  * @param[in] height        The height of the image.
@@ -49,7 +48,7 @@ struct QuantizerResult {
  *                          Default is false.
  * @param[in] transparentThreshold
  * @param[in] downsample    Whether to downsample the image before quantization.
- *                          May not have any impact depending on actual implementation.
+ *                          Could be ignored depending on actual implementation.
  *                          Default is true.
  *
  * @return @see QuantizerResult
