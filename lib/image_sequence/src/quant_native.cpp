@@ -68,6 +68,8 @@ static constexpr uint8_t REVERSE_GRAY_MAP[8] = {
 // threshold for floydSteinbergDither
 static constexpr int32_t FLOYD_MAX_ERROR = 24;
 
+// static uint32_t _BEEP_CNT = 0;
+
 class OctreeQuantizer {
     struct Node {
         union {
@@ -242,13 +244,13 @@ class OctreeQuantizer {
             auto childIdx    = node.u.childIdxs[index];
             // case no such child
             if (!childIdx) {
-                // dead end, actually not possible
+                // // dead end, actually not possible
                 // assert(node.childCnt > 0);  // non-leaf nodes should have at least one child
                 // if (!node.childCnt) {
                 //     GeneralLogger::error("Failed to lookup color while quantizing: dead end");
                 //     return 0;
                 // }
-                // single child, just go to it
+                // // single child, just go to it
                 // else if (node.childCnt == 1) {
                 //     for (uint32_t child = 0; child < 8; ++child) {
                 //         if (node.u.childIdxs[child]) {
@@ -257,7 +259,7 @@ class OctreeQuantizer {
                 //         }
                 //     }
                 // }
-                // more than 1 children, find the closest one
+                // // more than 1 children, find the closest one
                 // else {
                 //     uint32_t closestIndex = 8;
                 //     uint32_t minDist      = 8;  // 8 > 7 for sure
@@ -274,6 +276,9 @@ class OctreeQuantizer {
                 // }
 
                 // or just return 0, let the caller handle it :)
+                // actually only a few pixels could reach here, less than 10%, likely 1%,
+                // and most of them only happen when applying error-diffusion dithering
+                // _BEEP_CNT++;
                 return 0;
             }
             nodeIdx = childIdx;
@@ -385,7 +390,7 @@ class OctreeQuantizer {
     }
 
     // uint32_t
-    // findClosestColor(const PixelBGRA color) const noexcept {
+    // findClosestColor(const PixelBGRA& color) const noexcept {
     //     if (!isFinished) return 0;
     //     auto nodeIdx = _getIndex(color);
     //     // case not found
@@ -445,7 +450,7 @@ class OctreeQuantizer {
 
     // how about just using the stupid but straightforward way?
     uint32_t
-    findClosestColor(const PixelBGRA color) const noexcept {
+    findClosestColor(const PixelBGRA& color) const noexcept {
         if (!isFinished) return 0;
         uint32_t ret   = 0;
         double minDist = -1;
@@ -835,6 +840,7 @@ GIFImage::quantize(const std::span<PixelBGRA>& pixels,
     // for (const auto& color : result.palette) {
     //     printf("#%02x%02x%02x\n", color.r, color.g, color.b);
     // }
+    // printf("Beeped %d times, %.2f%%\n", _BEEP_CNT, static_cast<double>(_BEEP_CNT) / pixels.size() * 100.0);
     result.isValid = true;
     return result;
 }
