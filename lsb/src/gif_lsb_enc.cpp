@@ -52,10 +52,9 @@ getDitherMode(const bool disableDither, const uint32_t frameCount, const bool gr
     if (disableDither) {
         return DitherNone;
     }
-    // if grayscale and more than 1 frame, use ordered dithering.
-    // ordered dithering can prevent "snowy screen" effect,
-    // but only works well with grayscale images
-    else if (grayscale && frameCount > 1) {
+    // if more than 1 frame, use ordered dithering
+    // ordered dithering can prevent "snowy screen" effect
+    else if (frameCount > 1) {
         return DitherOrdered;
     }
     // if only 1 frame, use Floyd-Steinberg dithering for better quality

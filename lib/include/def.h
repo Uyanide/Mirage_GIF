@@ -32,6 +32,11 @@ TOU8(const uint32_t x) {
     return static_cast<uint8_t>(x & 0xFF);
 }
 
+inline constexpr uint8_t
+TOU8C(const uint32_t x) {
+    return static_cast<uint8_t>(x > 0xFF ? 0xFF : x);
+}
+
 #ifdef _MSC_VER
 #pragma pack(push, 1)
 #endif  // _MSC_VER
