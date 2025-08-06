@@ -9,7 +9,9 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(lib_dir ${CMAKE_CURRENT_LIST_DIR}/lib)
 
 if(WIN32)
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/bin/win)
@@ -19,6 +21,8 @@ else()
     message(WARNING "Platform not tested, using default output directory.")
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/bin)
 endif()
+
+set(target_exe TRUE)
 
 include(${CMAKE_CURRENT_LIST_DIR}/mirage/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/lsb/CMakeLists.txt)

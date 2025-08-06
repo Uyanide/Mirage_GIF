@@ -12,23 +12,23 @@ endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/CompilerOptions.cmake)
 
-if(NOT LIB_DIR)
-    set(LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/../lib)
+if(NOT lib_dir)
+    set(lib_dir ${CMAKE_CURRENT_LIST_DIR}/../lib)
 endif()
 
-if(NOT GIF_ENC_BUILT)
-    add_subdirectory(${LIB_DIR}/gif_enc ${CMAKE_BINARY_DIR}/lib_gif_enc)
-    set(GIF_ENC_BUILT TRUE)
+if(NOT gif_enc_included)
+    include(${lib_dir}/gif_enc/CMakeLists.txt)
+    set(gif_enc_included TRUE)
 endif()
 
-if(NOT IMAGE_SEQUENCE_BUILT)
-    add_subdirectory(${LIB_DIR}/image_sequence ${CMAKE_BINARY_DIR}/lib_image_sequence)
-    set(IMAGE_SEQUENCE_BUILT TRUE)
+if(NOT image_sequence_included)
+    include(${lib_dir}/image_sequence/CMakeLists.txt)
+    set(image_sequence_included TRUE)
 endif()
 
-if(NOT FILE_IO_BUILT)
-    add_subdirectory(${LIB_DIR}/file_io ${CMAKE_BINARY_DIR}/lib_file_io)
-    set(FILE_IO_BUILT TRUE)
+if(NOT file_io_included)
+    include(${lib_dir}/file_io/CMakeLists.txt)
+    set(file_io_included TRUE)
 endif()
 
 if(NOT EXECUTABLE_OUTPUT_PATH)
@@ -39,33 +39,28 @@ add_executable(GIFMirage
     ${CMAKE_CURRENT_LIST_DIR}/src/gif_options.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/gif_mirage.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
-)
-
-target_link_directories(GIFMirage PRIVATE
-    ${CMAKE_BINARY_DIR}/lib_gif_enc
-    ${CMAKE_BINARY_DIR}/image_sequence
-    ${CMAKE_BINARY_DIR}/lib_file_io
+    ${gif_enc_source_files}
+    ${image_sequence_source_files}
+    ${file_io_source_files}
 )
 
 target_link_libraries(GIFMirage PRIVATE
-    naive_gif
-    naive_file_io
-    image_sequence)
+    ${image_sequence_link_libraries}
+)
 
 target_include_directories(GIFMirage PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/include
-    ${LIB_DIR}/gif_enc/include
-    ${LIB_DIR}/image_sequence/include
-    ${LIB_DIR}/file_io/include
-    ${LIB_DIR}/include
+    ${lib_dir}/include
+    ${gif_enc_include_dirs}
+    ${image_sequence_include_dirs}
+    ${file_io_include_dirs}
 )
 
-if(WIN32)
-    target_compile_definitions(GIFMirage PRIVATE UNICODE _UNICODE)
-endif()
+target_compile_options(GIFMirage PRIVATE ${global_compile_options})
 
-target_compile_options(GIFMirage PRIVATE ${GLOBAL_COMPILE_OPTIONS})
+target_link_options(GIFMirage PRIVATE ${global_link_options})
 
-target_link_options(GIFMirage PRIVATE ${GLOBAL_LINK_OPTIONS})
-
-target_compile_definitions(GIFMirage PRIVATE ${GLOBAL_COMPILE_DEFINITIONS})
+target_compile_definitions(GIFMirage PRIVATE
+    ${global_compile_definitions}
+    ${image_sequence_compile_definitions}
+)
