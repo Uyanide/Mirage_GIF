@@ -101,6 +101,16 @@ isValidFileName(const std::string& str) {
     return !str.empty() && str.find_first_of("\\/:*?\"<>|") == std::string::npos;
 }
 
+inline auto
+checkFileExists(const std::string& filename) {
+    auto localized = NaiveIO::localizePath(filename);
+    if (const std::filesystem::path filePath(localized); std::filesystem::exists(filePath)) {
+        return localized;
+    } else {
+        return decltype(localized)();
+    }
+}
+
 }  // namespace NaiveIO
 
 #endif  // NAIVEIO_FILE_UTILS_H
