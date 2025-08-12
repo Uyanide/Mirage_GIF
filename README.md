@@ -1,1 +1,43 @@
-虽然仍然存在不少没修的 BUG 和没实现的功能，但不出意外的话这里的开发已经结束了。后续开发会在整合 LSB 部分代码的另一个项目(目前仍是私人仓库)中继续进行，不如说从立项初期就一直在考虑将其整合入其他奇奇怪怪项目的可能性，不然也不会为已经高度封装的文件读写操作专门写一个模块了。
+## 基于 GIF 的"幻影坦克"与"无影坦克"隐写图实现
+
+### 项目结构
+
+```plaintext
+.
+├── cmake
+│   └── CompilerOptions.cmake
+├── CMakeLists.txt
+├── lib
+│   ├── file_io
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── ...
+│   │   └── src
+│   │       └── ...
+│   ├── gif_enc
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── ...
+│   │   └── src
+│   │       └── ...
+│   ├── image_sequence
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── ...
+│   │   └── src
+│   │       └── ...
+│   └── include
+│       └── ...
+├── lsb
+│   ├── CMakeLists.txt
+│   ├── include
+│   │   └── ...
+│   └── src
+│       └── ...
+├── mirage
+│   ├── CMakeLists.txt
+│   ├── include
+│   │   └── ...
+│   └── src
+│       └── ...
+...
